@@ -1,0 +1,10 @@
+# Python veirtual enviroment
+.venv/
+venv/
+
+# Cache
+.pytest_cache/
+__pycache__/
+
+# DataBase
+db.*
