@@ -1,6 +1,13 @@
 # Python veirtual enviroment
-.venv/
+.venv*
 venv/
+
+# Settings 
+*.env*
+
+# Coockie
+cookies*
+cookie*
 
 # Cache
 .pytest_cache/
