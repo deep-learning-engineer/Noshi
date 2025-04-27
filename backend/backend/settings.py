@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     'users',
     'bank_accounts',
     'transactions',
-    'transfers'
+    'transfers',
+    'achievements.apps.AchievementsConfig'
 ]
 
 AUTH_USER_MODEL = 'users.User'
