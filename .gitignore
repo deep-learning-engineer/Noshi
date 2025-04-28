@@ -1,7 +1,7 @@
 # Python veirtual enviroment
 .venv*
 venv/
-
+.idea/
 # Settings 
 *.env*
 
