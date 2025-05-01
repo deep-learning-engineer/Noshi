@@ -23,9 +23,9 @@ class BankAccount(models.Model):
             last_account = BankAccount.objects.order_by('-account_number').first()
             last_number = int(last_account.account_number) if last_account else 0
             self.account_number = str(last_number + 1).zfill(20)
+        
         super().save(*args, **kwargs)
         
-    
 
 class UserBankAccount(models.Model):
     bank_account = models.ForeignKey(

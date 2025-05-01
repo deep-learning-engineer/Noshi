@@ -28,7 +28,6 @@ class BankAccountSerializer(serializers.ModelSerializer):
         return UserBankAccountSerializer(user_accounts, many=True).data
 
 
-
 class UserBankAccountSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     user_id = serializers.PrimaryKeyRelatedField(
