@@ -4,7 +4,6 @@ from users.models import User
 from users.serializers import UserSerializer
 
 
-
 class BankAccountSerializer(serializers.ModelSerializer):    
     users = serializers.SerializerMethodField()
 
@@ -24,8 +23,7 @@ class BankAccountSerializer(serializers.ModelSerializer):
 
     def get_users(self, obj):
         """Returns a list of users associated with an account."""
-        user_accounts = obj.users.all()
-        return UserBankAccountSerializer(user_accounts, many=True).data
+        return UserSerializer([ua.user for ua in obj.users.all()], many=True).data
 
 
 class UserBankAccountSerializer(serializers.ModelSerializer):
@@ -53,4 +51,3 @@ class UserBankAccountSerializer(serializers.ModelSerializer):
             'bank_account_id'
         ]
         read_only_fields = ['id']
-

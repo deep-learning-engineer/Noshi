@@ -1,74 +1,50 @@
 from rest_framework import serializers
-from .models import TransactionType, Transaction, TransactionDetail
-from bank_accounts.serializers import BankAccountSerializer
-from bank_accounts.models import BankAccount
+from .models import Transaction, BankAccount
+from django.db import transaction as db_transaction
+from decimal import Decimal
 
 
-
-class TransactionTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TransactionType
-        fields = '__all__'
-        read_only_fields = ('type_id',)
-
-
-
-class TransactionDetailSerializer(serializers.ModelSerializer):
-    bank_account = BankAccountSerializer(read_only=True)
-    bank_account_id = serializers.PrimaryKeyRelatedField(
-        queryset=BankAccount.objects.all(),
-        source='bank_account',
-        write_only=True
+class TransactionSerializer(serializers.Serializer):
+    sender_account = serializers.CharField(max_length=20)
+    receiver_account = serializers.CharField(max_length=20)
+    amount = serializers.DecimalField(
+        max_digits=15, 
+        decimal_places=2,
+        min_value=Decimal('0.01')
+    )
+    description = serializers.CharField(
+        required=False, 
+        allow_blank=True,
+        default="Money Transfer"
     )
 
-    class Meta:
-        model = TransactionDetail
-        fields = [
-            'id',
-            'transaction',
-            'bank_account',
-            'bank_account_id',
-            'amount'
-        ]
-        read_only_fields = ('id', 'transaction')
-        extra_kwargs = {
-            'transaction': {'required': False}
-        }
+    def validate_sender_account(self, value):
+        try:
+            return BankAccount.objects.get(account_number=value)
+        except BankAccount.DoesNotExist:
+            raise serializers.ValidationError("Sender account does not exist")
 
+    def validate_receiver_account(self, value):
+        try:
+            return BankAccount.objects.get(account_number=value)
+        except BankAccount.DoesNotExist:
+            raise serializers.ValidationError("Receiver account does not exist")
 
+    def validate(self, data):
+        sender = data['sender_account']
+        receiver = data['receiver_account']
+        amount = data['amount']
 
-class TransactionSerializer(serializers.ModelSerializer):
-    type = TransactionTypeSerializer(read_only=True) 
-    type_id = serializers.PrimaryKeyRelatedField(
-        queryset=TransactionType.objects.all(),
-        source='type',
-        write_only=True
-    )
-    
-    details = TransactionDetailSerializer(many=True)
+        if not sender.is_active():
+            raise serializers.ValidationError({"sender_account": "Sender account is not active"})
 
-    class Meta:
-        model = Transaction
-        fields = [
-            'transaction_id',
-            'type',
-            'type_id',
-            'created_at',
-            'status',
-            'description',
-            'details'
-        ]
-        read_only_fields = ('transaction_id', 'created_at')
+        if not receiver.is_active():
+            raise serializers.ValidationError({"receiver_account": "Receiver account is not active"})
 
-    def create(self, validated_data):
-        details_data = validated_data.pop('details') 
-        transaction = Transaction.objects.create(**validated_data)
-        
-        for detail_data in details_data:
-            TransactionDetail.objects.create(
-                transaction=transaction,
-                bank_account=detail_data['bank_account'],
-                amount=detail_data['amount']
-            )
-        
-        return transaction
+        if sender.balance < amount:
+            raise serializers.ValidationError({"amount": "Insufficient funds in sender's account"})
+
+        if sender == receiver:
+            raise serializers.ValidationError("Cannot transfer to the same account")
+
+        return data

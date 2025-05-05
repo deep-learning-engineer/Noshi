@@ -22,7 +22,6 @@ class UserRegistrationView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED) 
 
 
-
 class UserLoginView(generics.GenericAPIView):
     serializer_class = UserLoginSerializer
     permission_classes = (AllowAny,)
@@ -41,16 +40,15 @@ class UserLoginView(generics.GenericAPIView):
 
 class ProfileView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
-    permission_classes = (IsAuthenticated,)
 
     def get_object(self):
         return self.request.user
 
 
 class LogoutView(APIView):
-    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         logout(request)
         return Response({"message": "Logged out successfully"}, status=200)
+    
     

@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'users',
     'bank_accounts',
     'transactions',
-    'transfers'
+    'achievements.apps.AchievementsConfig'
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -67,7 +67,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',    
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+        'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend', 
