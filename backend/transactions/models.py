@@ -1,6 +1,7 @@
 from django.db import models
 
 from bank_accounts.models import BankAccount
+from django.db import transaction as db_transaction
 
 
 class TransactionType(models.Model):
@@ -25,7 +26,7 @@ class Transaction(models.Model):
 
     @classmethod
     def create_transaction(cls, sender_account, receiver_account, amount, description=""):
-        with transaction.atomic():
+        with db_transaction.atomic():
             if sender_account.balance < amount:
                 raise ValidationError("Insufficient funds")
 
@@ -59,8 +60,6 @@ class Transaction(models.Model):
                 [sender_account, receiver_account],
                 ['balance']
             )
-
-        return transfer
 
     def __str__(self):
         return f"Transaction {self.transaction_id} - {self.type.name}"

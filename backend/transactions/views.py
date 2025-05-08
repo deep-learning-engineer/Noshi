@@ -1,34 +1,44 @@
+from django.db import transaction as db_transaction
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Transaction
 from .serializers import TransactionSerializer
-from django.db import transaction as db_transaction
+from bank_accounts.models import UserBankAccount
 
 
 class TransactionView(APIView):
     def post(self, request):
         serializer = TransactionSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(
-                serializer.errors, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+        serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
         try:
             with db_transaction.atomic():
-                transaction = Transaction.create_transaction(
+                Transaction.create_transaction(
                     sender_account=data['sender_account'],
                     receiver_account=data['receiver_account'],
                     amount=data['amount'],
-                    description=data.get('description', '')
+                    description=data.get('description')
                 )
 
-                result_serializer = TransactionSerializer(transaction)
+                receiver_user = UserBankAccount.objects.get(
+                    bank_account=data['receiver_account']
+                ).user
+
+                response_data = {
+                    "sender_account": data['sender_account'].account_number,
+                    "receiver_account": data['receiver_account'].account_number,
+                    "receiver_info": {
+                        "first_name": receiver_user.first_name,
+                        "last_name": receiver_user.last_name
+                    },
+                    "amount": str(data['amount']),
+                    "description": data.get('description')
+                }
+
                 return Response(
-                    result_serializer.data,
+                    response_data,
                     status=status.HTTP_201_CREATED
                 )
 

@@ -17,9 +17,10 @@ class UserRegistrationView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         
-        return Response({
-            'message': 'Registration successful. Please log in.',
-        }, status=status.HTTP_201_CREATED) 
+        return Response(
+            {'message': 'Registration successful. Please log in.'}, 
+            status=status.HTTP_201_CREATED
+        ) 
 
 
 class UserLoginView(generics.GenericAPIView):
@@ -33,9 +34,10 @@ class UserLoginView(generics.GenericAPIView):
         
         login(request, user)
         
-        return Response({
-            'message': 'Login successful'
-        }, status=200)
+        return Response(
+            {'message': 'Login successful'}, 
+            status=status.HTTP_200_OK
+        )
         
 
 class ProfileView(generics.RetrieveAPIView):
@@ -49,6 +51,9 @@ class LogoutView(APIView):
 
     def post(self, request):
         logout(request)
-        return Response({"message": "Logged out successfully"}, status=200)
+        return Response(
+            {"message": "Logged out successfully"},
+            status=status.HTTP_200_OK
+        )
     
     
