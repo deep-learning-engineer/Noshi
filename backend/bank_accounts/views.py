@@ -1,7 +1,15 @@
+from rest_framework import status
+from rest_framework.views import APIView
 from rest_framework import generics, permissions
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from users.models import User
 from .models import BankAccount, UserBankAccount
-from .serializers import BankAccountSerializer, UserBankAccountSerializer
+from .serializers import (
+    BankAccountSerializer, 
+    UserBankAccountSerializer, 
+    UserAccountsSerializer
+)
 
 
 class BankAccountCreateView(generics.CreateAPIView):
@@ -34,3 +42,20 @@ class BankAccountDetailView(generics.RetrieveAPIView):
         return BankAccount.objects.filter(
             users__user=self.request.user
         )
+        
+
+class UserByPhoneView(APIView):
+    permission_classes = [IsAuthenticated]  
+    
+    def get(self, request, phone):
+        try:
+            user = User.objects.get(phone=phone)   
+            print(user)
+            serializer = UserAccountsSerializer(user)
+            return Response(serializer.data)  
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User with this phone number not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            

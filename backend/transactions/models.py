@@ -16,6 +16,7 @@ class Transaction(models.Model):
     TRANSACTION_STATUS = [
         ('completed', 'Completed'),
         ('failed', 'Failed'),
+        ('pending', 'Pending')
     ]
     
     transaction_id = models.AutoField(primary_key=True)

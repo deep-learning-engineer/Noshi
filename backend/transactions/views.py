@@ -2,14 +2,17 @@ from django.db import transaction as db_transaction
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from .models import Transaction
 from .serializers import TransactionSerializer
 from bank_accounts.models import UserBankAccount
 
 
 class TransactionView(APIView):
+    permission_classes = [IsAuthenticated] 
+    
     def post(self, request):
-        serializer = TransactionSerializer(data=request.data)
+        serializer = TransactionSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
@@ -47,6 +50,7 @@ class TransactionView(APIView):
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 
 # class TransactionHistoryView(APIView):
 #     def get(self, request, account_number):

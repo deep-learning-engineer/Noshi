@@ -12,14 +12,12 @@ class BankAccountSerializer(serializers.ModelSerializer):
         fields = [
             'account_number',
             'balance',
+            'payment_system',
             'status',
             'users'
         ]
-        read_only_fields = ['__all__']
-        extra_kwargs = {
-            'account_number': {'read_only': True},
-            'balance': {'read_only': True}
-        }
+
+        read_only_fields = ['account_number', 'balance', 'status', 'users']
 
     def get_users(self, obj):
         """Returns a list of users associated with an account."""
@@ -51,3 +49,19 @@ class UserBankAccountSerializer(serializers.ModelSerializer):
             'bank_account_id'
         ]
         read_only_fields = ['id']
+
+
+class UserAccountsSerializer(serializers.ModelSerializer):
+    account_numbers = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'account_numbers']
+    
+    def get_account_numbers(self, obj):
+        return list(
+            obj.bank_accounts.filter(
+                bank_account__status='active'
+            ).values_list('bank_account__account_number', flat=True)
+        )
+        

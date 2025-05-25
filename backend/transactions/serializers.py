@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import Transaction, BankAccount
-from django.db import transaction as db_transaction
+from .models import BankAccount
 from decimal import Decimal
 
 
@@ -10,7 +9,7 @@ class TransactionSerializer(serializers.Serializer):
     amount = serializers.DecimalField(
         max_digits=15, 
         decimal_places=2,
-        min_value=Decimal('0.01')
+        min_value=Decimal('0.00')
     )
     description = serializers.CharField(
         required=False, 
@@ -20,7 +19,17 @@ class TransactionSerializer(serializers.Serializer):
 
     def validate_sender_account(self, value):
         try:
-            return BankAccount.objects.get(account_number=value)
+            account = BankAccount.objects.get(account_number=value)
+            request = self.context.get('request')
+            print(request)
+            
+            if not request:
+                raise serializers.ValidationError("Request context is missing")
+            
+            if not account.users.filter(user=request.user).exists():
+                raise serializers.ValidationError("You are not the owner of this account")
+            
+            return account
         except BankAccount.DoesNotExist:
             raise serializers.ValidationError("Sender account does not exist")
 

@@ -9,8 +9,23 @@ class BankAccount(models.Model):
         ('closed', 'Closed'),
     ]
     
+    PAYMENT_SYSTEMS = [
+        ('VISA', 'Visa'),
+        ('MC', 'Mastercard'),
+        ('MIR', 'Мир'),
+        ('UPI', 'UnionPay'),
+    ]
+    
+    PREFIXES = {
+        'VISA': '4',
+        'MC': '5',
+        'MIR': '2',
+        'UPI': '6'
+    }
+    
     bank_account_id = models.AutoField(primary_key=True)
     account_number = models.CharField(max_length=20, unique=True, editable=False)
+    payment_system = models.CharField(max_length=4, choices=PAYMENT_SYSTEMS)
     balance = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=ACCOUNT_STATUS, default='active', editable=False)
@@ -22,9 +37,11 @@ class BankAccount(models.Model):
         return self.status == 'active'
     
     def save(self, *args, **kwargs):
-        last_account = BankAccount.objects.order_by('-account_number').first()
-        last_number = int(last_account.account_number) if last_account else 0
-        self.account_number = str(last_number + 1).zfill(20)
+        if not self.account_number:
+            prefix = self.PREFIXES.get(self.payment_system, '2')
+            last_account = BankAccount.objects.order_by('-account_number').first()
+            last_number = int(last_account.account_number[len(prefix):]) if last_account else 0
+            self.account_number = f"{prefix}{str(last_number + 1).zfill(20 - len(prefix))}"
         
         super().save(*args, **kwargs)
         
