@@ -9,7 +9,7 @@ class TransactionSerializer(serializers.Serializer):
     amount = serializers.DecimalField(
         max_digits=15, 
         decimal_places=2,
-        min_value=Decimal('0.00')
+        min_value=Decimal('0.01')
     )
     description = serializers.CharField(
         required=False, 
@@ -21,10 +21,12 @@ class TransactionSerializer(serializers.Serializer):
         try:
             account = BankAccount.objects.get(account_number=value)
             request = self.context.get('request')
-            print(request)
             
             if not request:
                 raise serializers.ValidationError("Request context is missing")
+            
+            if not account.is_active():
+                raise serializers.ValidationError({"sender_account": "Sender account is not active"})
             
             if not account.users.filter(user=request.user).exists():
                 raise serializers.ValidationError("You are not the owner of this account")
@@ -35,7 +37,12 @@ class TransactionSerializer(serializers.Serializer):
 
     def validate_receiver_account(self, value):
         try:
-            return BankAccount.objects.get(account_number=value)
+            account = BankAccount.objects.get(account_number=value)
+            
+            if not account.is_active():
+                raise serializers.ValidationError({"receiver_account": "Receiver account is not active"})
+        
+            return account
         except BankAccount.DoesNotExist:
             raise serializers.ValidationError("Receiver account does not exist")
 
@@ -43,12 +50,6 @@ class TransactionSerializer(serializers.Serializer):
         sender = data['sender_account']
         receiver = data['receiver_account']
         amount = data['amount']
-
-        if not sender.is_active():
-            raise serializers.ValidationError({"sender_account": "Sender account is not active"})
-
-        if not receiver.is_active():
-            raise serializers.ValidationError({"receiver_account": "Receiver account is not active"})
 
         if sender.balance < amount:
             raise serializers.ValidationError({"amount": "Insufficient funds in sender's account"})

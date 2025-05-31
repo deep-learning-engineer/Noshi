@@ -23,9 +23,17 @@ class BankAccount(models.Model):
         'UPI': '6'
     }
     
+    CURRENCIES = [
+        ('RUB', 'Ruble'),
+        ('USD', 'Dollar'),
+        ('EUR', 'Euro'),
+        ('CNY', 'Yuan')
+    ]
+    
     bank_account_id = models.AutoField(primary_key=True)
     account_number = models.CharField(max_length=20, unique=True, editable=False)
-    payment_system = models.CharField(max_length=4, choices=PAYMENT_SYSTEMS)
+    payment_system = models.CharField(max_length=4, choices=PAYMENT_SYSTEMS, default='MIR')
+    currency = models.CharField(max_length=3, choices=CURRENCIES, default='RUB')
     balance = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=ACCOUNT_STATUS, default='active', editable=False)
@@ -38,7 +46,7 @@ class BankAccount(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.account_number:
-            prefix = self.PREFIXES.get(self.payment_system, '2')
+            prefix = self.PREFIXES[self.payment_system]
             last_account = BankAccount.objects.order_by('-account_number').first()
             last_number = int(last_account.account_number[len(prefix):]) if last_account else 0
             self.account_number = f"{prefix}{str(last_number + 1).zfill(20 - len(prefix))}"

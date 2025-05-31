@@ -13,6 +13,7 @@ class BankAccountSerializer(serializers.ModelSerializer):
             'account_number',
             'balance',
             'payment_system',
+            'currencies',
             'status',
             'users'
         ]
