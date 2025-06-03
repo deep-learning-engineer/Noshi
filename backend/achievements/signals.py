@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from transactions.models import TransactionDetail
+from transactions.models import Transaction
 from .logic import (
     award_first_transaction,
     award_big_wallet,
@@ -10,26 +10,30 @@ from .logic import (
 )
 
 
-@receiver(post_save, sender=TransactionDetail)
-def on_transaction_detail_save(sender, instance, created, **kwargs):
-    if not created or instance.amount >= 0:
+@receiver(post_save, sender=Transaction)
+def on_transaction_save(sender, instance, created, **kwargs):
+    if not created:
         return
 
-    user_bank_account = instance.bank_account.users.first()
-    if not user_bank_account:
+    sender_account = instance.sender_account
+    sender_users = sender_account.users.select_related('user').all()
+    
+    if not sender_users:
         return
 
-    user = user_bank_account.user
+    sender_currency = sender_account.currency
+    receiver_currency = instance.receiver_account.currency
+    transaction_date = instance.created_at.date()
 
-    transaction_date = instance.transaction.created_at.date()
-
-    award_big_wallet(user=user, date=transaction_date)
-
-    sender_acc = instance.bank_account
-    receiver_detail = instance.transaction.details.exclude(pk=instance.pk).first()
-    receiver_acc = receiver_detail.bank_account if receiver_detail else None
-
-    award_first_transaction(user)
-    award_loyal_client(user)
-    if receiver_acc:
-        award_currency_broker(user, sender_acc, receiver_acc)
+    for user_bank_account in sender_users:
+        user = user_bank_account.user
+        account_ids = user.bank_accounts.values_list('bank_account_id', flat=True)
+        transaction_count = Transaction.objects.filter(
+            sender_account_id__in=account_ids
+        ).count()
+        
+        award_big_wallet(user, transaction_date, account_ids)
+        award_first_transaction(user, account_ids, transaction_count)
+        award_loyal_client(user, transaction_count)
+        award_currency_broker(user, sender_currency, receiver_currency)
+        

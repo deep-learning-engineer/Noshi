@@ -7,7 +7,6 @@ from users.models import User
 from .models import BankAccount, UserBankAccount
 from .serializers import (
     BankAccountSerializer, 
-    UserBankAccountSerializer, 
     UserAccountsSerializer
 )
 
@@ -17,7 +16,7 @@ class BankAccountCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        bank_account = serializer.save()
+        bank_account = serializer.save(owner=self.request.user)
         UserBankAccount.objects.create(
             user=self.request.user,
             bank_account=bank_account
@@ -25,12 +24,12 @@ class BankAccountCreateView(generics.CreateAPIView):
 
 
 class UserBankAccountsListView(generics.ListAPIView):
-    serializer_class = UserBankAccountSerializer
+    serializer_class = BankAccountSerializer
 
     def get_queryset(self):
-        return UserBankAccount.objects.filter(
-            user=self.request.user
-        ).select_related('bank_account')
+        return BankAccount.objects.filter(
+            users__user=self.request.user
+        )
 
 
 class BankAccountDetailView(generics.RetrieveAPIView):
@@ -50,7 +49,6 @@ class UserByPhoneView(APIView):
     def get(self, request, phone):
         try:
             user = User.objects.get(phone=phone)   
-            print(user)
             serializer = UserAccountsSerializer(user)
             return Response(serializer.data)  
         except User.DoesNotExist:

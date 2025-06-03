@@ -1,10 +1,12 @@
 import pytest
+
 from decimal import Decimal
 from django.utils import timezone
+from django.db import transaction as db_transaction
 
 from bank_accounts.models import BankAccount, UserBankAccount
 from .models import Achievement, UserAchievement
-from transactions.models import Transaction, TransactionDetail, TransactionType
+from transactions.models import Transaction, TransactionType
 from users.models import User
 
 
@@ -19,31 +21,39 @@ def create_user(email: str, phone: str, first: str = "Foo", last: str = "Bar") -
 
 
 def create_account(user: User, currency: str = "RUB") -> BankAccount:
-    account = BankAccount.objects.create(currency=currency)
+    account = BankAccount.objects.create(owner=user, currency=currency)
     UserBankAccount.objects.create(user=user, bank_account=account)
     return account
 
 
 def create_transfer(sender: BankAccount, receiver: BankAccount, amount: Decimal):
     t_type, _ = TransactionType.objects.get_or_create(name="Transfer")
+    
+    if sender.currency != receiver.currency:
+        converted_amount = Transaction.convert_to(
+            sender.currency,
+            receiver.currency,
+            amount
+        )
+    else:
+        converted_amount = amount
 
-    tr = Transaction.objects.create(
-        type_id=t_type,
-        status="completed",
-        description="pytest",
-        created_at=timezone.now(),
-    )
+    with db_transaction.atomic():
+        Transaction.objects.create(
+            type_id=t_type,
+            status="completed",
+            description="pytest",
+            created_at=timezone.now(),
+            amount=amount,
+            converted_amount=converted_amount,
+            sender_account=sender,
+            receiver_account=receiver
+        )
 
-    TransactionDetail.objects.create(
-        transaction=tr,
-        bank_account=receiver,
-        amount=amount,
-    )
-    TransactionDetail.objects.create(
-        transaction=tr,
-        bank_account=sender,
-        amount=-amount,
-    )
+        sender.balance -= amount
+        receiver.balance += converted_amount
+        sender.save()
+        receiver.save()
 
 
 @pytest.fixture

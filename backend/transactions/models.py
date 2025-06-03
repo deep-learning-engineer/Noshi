@@ -30,6 +30,22 @@ class Transaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=TRANSACTION_STATUS, default='pending')
     description = models.TextField(blank=True)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    converted_amount = models.DecimalField(
+        max_digits=15, 
+        decimal_places=2,
+        help_text="Сумма в валюте получателя после конвертации",
+    )
+    sender_account = models.ForeignKey(
+        BankAccount, 
+        on_delete=models.PROTECT,
+        related_name='sent_transactions'
+    )
+    receiver_account = models.ForeignKey(
+        BankAccount, 
+        on_delete=models.PROTECT,
+        related_name='received_transactions'
+    )
 
     @staticmethod 
     def convert_to(currency_sender, currency_receiver, amount):
@@ -42,8 +58,8 @@ class Transaction(models.Model):
             if 'data' not in data or currency_receiver not in data['data']:
                 raise ValueError("Currency conversion data not available")
                 
-            exp = data['data'][currency_receiver]['value']
-            return amount * Decimal(exp)
+            rate = data['data'][currency_receiver]['value']
+            return amount * Decimal(rate)
         except (requests.RequestException, ValueError) as e:
             raise ValueError("Currency conversion between different currencies is currently unavailable") from e
 
@@ -51,56 +67,39 @@ class Transaction(models.Model):
     def create_transaction(cls, sender_account, receiver_account, amount, description=""):
         with db_transaction.atomic():
             transaction_type, _ = TransactionType.objects.get_or_create(
-                name="Transaction",
-                defaults={'name': 'Transaction'}
+                name="Transfer",
+                defaults={'name': 'Transfer'}
             )
+
+            if sender_account.currency != receiver_account.currency:
+                converted_amount = cls.convert_to(
+                    sender_account.currency,
+                    receiver_account.currency,
+                    amount
+                )
+            else:
+                converted_amount = amount
 
             transaction = cls.objects.create(
                 type_id=transaction_type,
                 status='completed',
-                description=description
+                description=description,
+                amount=amount,
+                converted_amount=converted_amount,
+                sender_account=sender_account,
+                receiver_account=receiver_account
             )
 
-            TransactionDetail.objects.bulk_create([
-                TransactionDetail(
-                    transaction=transaction,
-                    bank_account=sender_account,
-                    amount=-amount
-                ),
-                TransactionDetail(
-                    transaction=transaction,
-                    bank_account=receiver_account,
-                    amount=amount
-                )
-            ])
-
             sender_account.balance = models.F('balance') - amount
-            receiver_account.balance = models.F('balance') + cls.convert_to(sender_account.currency, receiver_account.currency, amount)
+            receiver_account.balance = models.F('balance') + converted_amount
             BankAccount.objects.bulk_update(
                 [sender_account, receiver_account],
                 ['balance']
             )
 
-    def __str__(self):
-        return f"Transaction {self.transaction_id} - {self.type.name}"
-    
-    
-class TransactionDetail(models.Model):
-    transaction = models.ForeignKey(
-        Transaction, 
-        on_delete=models.CASCADE,
-        related_name='details'
-    )
-    bank_account = models.ForeignKey(
-        BankAccount, 
-        on_delete=models.PROTECT,
-        related_name='transaction_details'
-    )
-    amount = models.DecimalField(max_digits=15, decimal_places=2)
-
-    class Meta:
-        unique_together = (('transaction', 'bank_account'),)
+        return transaction
 
     def __str__(self):
-        return f"{self.transaction} - {self.bank_account} - {self.amount}"
-    
+        return f"Transaction {self.transaction_id} - {self.amount} ({self.sender_account.currency}) → \
+                {self.converted_amount or self.amount} ({self.receiver_account.currency})"
+                

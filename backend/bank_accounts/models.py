@@ -14,13 +14,15 @@ class BankAccount(models.Model):
         ('MC', 'Mastercard'),
         ('MIR', 'Мир'),
         ('UPI', 'UnionPay'),
+        ('JCB', 'Japan Credit Bureau')
     ]
     
     PREFIXES = {
         'VISA': '4',
         'MC': '5',
         'MIR': '2',
-        'UPI': '6'
+        'UPI': '6',
+        'JCB': '3528'
     }
     
     CURRENCIES = [
@@ -31,15 +33,20 @@ class BankAccount(models.Model):
     ]
     
     bank_account_id = models.AutoField(primary_key=True)
-    account_number = models.CharField(max_length=20, unique=True, editable=False)
+    account_number = models.CharField(max_length=16, unique=True, editable=False)
     payment_system = models.CharField(max_length=4, choices=PAYMENT_SYSTEMS, default='MIR')
     currency = models.CharField(max_length=3, choices=CURRENCIES, default='RUB')
     balance = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=ACCOUNT_STATUS, default='active', editable=False)
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name='owned_accounts'
+    )
 
     def __str__(self):
-        return f"{self.account_number} - {self.balance}"
+        return f"Bank Account: {self.account_number} - {self.balance}"
 
     def is_active(self):
         return self.status == 'active'
@@ -47,9 +54,16 @@ class BankAccount(models.Model):
     def save(self, *args, **kwargs):
         if not self.account_number:
             prefix = self.PREFIXES[self.payment_system]
-            last_account = BankAccount.objects.order_by('-account_number').first()
-            last_number = int(last_account.account_number[len(prefix):]) if last_account else 0
-            self.account_number = f"{prefix}{str(last_number + 1).zfill(20 - len(prefix))}"
+            last_account = BankAccount.objects.filter(payment_system=self.payment_system) \
+                                            .order_by('-account_number').first()
+            
+            if last_account:
+                last_number = int(last_account.account_number[len(prefix):])
+            else:
+                last_number = 0
+                
+            number_length = 16 - len(prefix)
+            self.account_number = f"{prefix}{str(last_number + 1).zfill(number_length)}"
         
         super().save(*args, **kwargs)
         
@@ -70,4 +84,4 @@ class UserBankAccount(models.Model):
         unique_together = (('bank_account', 'user'),)
 
     def __str__(self):
-        return f"{self.user} - {self.bank_account}"
+        return f"UserBankAccount: {self.user} - {self.bank_account}"
