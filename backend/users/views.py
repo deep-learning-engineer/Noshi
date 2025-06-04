@@ -1,8 +1,9 @@
 from django.contrib.auth import login, logout
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
+
 from .serializers import UserLoginSerializer, UserRegistrationSerializer, UserSerializer
 from .models import User
 
@@ -11,16 +12,16 @@ class UserRegistrationView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserRegistrationSerializer
     permission_classes = (AllowAny,)
-    
+
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        
+
         return Response(
-            {'message': 'Registration successful. Please log in.'}, 
+            {'message': 'Registration successful. Please log in.'},
             status=status.HTTP_201_CREATED
-        ) 
+        )
 
 
 class UserLoginView(generics.GenericAPIView):
@@ -31,14 +32,14 @@ class UserLoginView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data
-        
+
         login(request, user)
-        
+
         return Response(
-            {'message': 'Login successful'}, 
+            {'message': 'Login successful'},
             status=status.HTTP_200_OK
         )
-        
+
 
 class ProfileView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
@@ -55,5 +56,3 @@ class LogoutView(APIView):
             {"message": "Logged out successfully"},
             status=status.HTTP_200_OK
         )
-    
-    

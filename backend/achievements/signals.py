@@ -17,7 +17,7 @@ def on_transaction_save(sender, instance, created, **kwargs):
 
     sender_account = instance.sender_account
     sender_users = sender_account.users.select_related('user').all()
-    
+
     if not sender_users:
         return
 
@@ -27,13 +27,13 @@ def on_transaction_save(sender, instance, created, **kwargs):
 
     for user_bank_account in sender_users:
         user = user_bank_account.user
-        account_ids = user.bank_accounts.values_list('bank_account_id', flat=True)
+        account_ids = user.bank_accounts.values_list('bank_account_id',
+                                                     flat=True)
         transaction_count = Transaction.objects.filter(
             sender_account_id__in=account_ids
         ).count()
-        
+
         award_big_wallet(user, transaction_date, account_ids)
         award_first_transaction(user, account_ids, transaction_count)
         award_loyal_client(user, transaction_count)
         award_currency_broker(user, sender_currency, receiver_currency)
-        

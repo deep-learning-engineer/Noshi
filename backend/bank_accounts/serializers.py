@@ -1,10 +1,11 @@
 from rest_framework import serializers
-from .models import BankAccount, UserBankAccount
+
+from .models import BankAccount
 from users.models import User
 from users.serializers import UserSerializer
 
 
-class BankAccountSerializer(serializers.ModelSerializer):    
+class BankAccountSerializer(serializers.ModelSerializer):
     users = serializers.SerializerMethodField()
     owner = UserSerializer(read_only=True)
 
@@ -17,7 +18,7 @@ class BankAccountSerializer(serializers.ModelSerializer):
             'currency',
             'status',
             'users',
-            'owner' 
+            'owner'
         ]
 
         read_only_fields = ['account_number', 'balance', 'status', 'users']
@@ -33,11 +34,10 @@ class UserAccountsSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'account_numbers']
-    
+
     def get_account_numbers(self, obj):
         return list(
             obj.bank_accounts.filter(
                 bank_account__status='active'
             ).values_list('bank_account__account_number', flat=True)
         )
-        

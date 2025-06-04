@@ -1,12 +1,12 @@
 from decimal import Decimal
-from django.db.models import Sum, F
+from django.db.models import Sum
 from .models import Achievement, UserAchievement
 from transactions.models import Transaction
 
 
 def _get_or_create(name: str, description: str) -> Achievement:
     return Achievement.objects.get_or_create(
-        name=name, 
+        name=name,
         defaults={"condition": description}
     )[0]
 
@@ -56,4 +56,3 @@ def award_currency_broker(user, sender_currency, receiver_currency) -> None:
             "Отправить перевод в другой валюте"
         )
         _award(user, ach)
-        

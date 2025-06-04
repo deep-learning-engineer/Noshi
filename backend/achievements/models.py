@@ -8,6 +8,9 @@ class Achievement(models.Model):
     name = models.CharField(max_length=100)
     condition = models.TextField(blank=True)
 
+    class Meta:
+        db_table = 'achievements'
+        
     def __str__(self):
         return self.name
 
@@ -27,6 +30,7 @@ class UserAchievement(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = 'user_achievements'
         unique_together = (('achievement', 'user'), )
 
     def __str__(self):

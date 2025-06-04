@@ -8,7 +8,7 @@ class BankAccount(models.Model):
         ('frozen', 'Frozen'),
         ('closed', 'Closed'),
     ]
-    
+
     PAYMENT_SYSTEMS = [
         ('VISA', 'Visa'),
         ('MC', 'Mastercard'),
@@ -16,7 +16,7 @@ class BankAccount(models.Model):
         ('UPI', 'UnionPay'),
         ('JCB', 'Japan Credit Bureau')
     ]
-    
+
     PREFIXES = {
         'VISA': '4',
         'MC': '5',
@@ -24,14 +24,14 @@ class BankAccount(models.Model):
         'UPI': '6',
         'JCB': '3528'
     }
-    
+
     CURRENCIES = [
         ('RUB', 'Ruble'),
         ('USD', 'Dollar'),
         ('EUR', 'Euro'),
         ('CNY', 'Yuan')
     ]
-    
+
     bank_account_id = models.AutoField(primary_key=True)
     account_number = models.CharField(max_length=16, unique=True, editable=False)
     payment_system = models.CharField(max_length=4, choices=PAYMENT_SYSTEMS, default='MIR')
@@ -44,41 +44,59 @@ class BankAccount(models.Model):
         on_delete=models.PROTECT,
         related_name='owned_accounts'
     )
+    
+    class Meta:
+        db_table = 'bank_accounts'
 
     def __str__(self):
         return f"Bank Account: {self.account_number} - {self.balance}"
 
     def is_active(self):
         return self.status == 'active'
-    
+
     def save(self, *args, **kwargs):
         if not self.account_number:
             prefix = self.PREFIXES[self.payment_system]
-            last_account = BankAccount.objects.filter(payment_system=self.payment_system) \
-                                            .order_by('-account_number').first()
-            
-            if last_account:
-                last_number = int(last_account.account_number[len(prefix):])
-            else:
-                last_number = 0
-                
+            last_number = PaymentSystemCounter.get_next_number(self.payment_system)
+
             number_length = 16 - len(prefix)
-            self.account_number = f"{prefix}{str(last_number + 1).zfill(number_length)}"
-        
+            self.account_number = f"{prefix}{str(last_number).zfill(number_length)}"
+
         super().save(*args, **kwargs)
-        
+
+
+class PaymentSystemCounter(models.Model):
+    payment_system = models.CharField(max_length=4, choices=BankAccount.PAYMENT_SYSTEMS, unique=True)
+    last_number = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        db_table = 'payment_system_counter'
+
+    @classmethod
+    def get_next_number(cls, payment_system):
+        counter, _ = cls.objects.get_or_create(
+            payment_system=payment_system,
+            defaults={'last_number': 0}
+        )
+        counter.last_number += 1
+        counter.save()
+        return counter.last_number
+
 
 class UserBankAccount(models.Model):
     bank_account = models.ForeignKey(
-        BankAccount, 
+        BankAccount,
         on_delete=models.PROTECT,
         related_name='users'
     )
     user = models.ForeignKey(
-        User, 
+        User,
         on_delete=models.PROTECT,
         related_name='bank_accounts'
     )
+    
+    class Meta:
+        db_table = 'user_bank_accounts'
 
     class Meta:
         unique_together = (('bank_account', 'user'),)

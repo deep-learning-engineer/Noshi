@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.db import transaction as db_transaction
 
 from bank_accounts.models import BankAccount, UserBankAccount
-from .models import Achievement, UserAchievement
+from .models import UserAchievement
 from transactions.models import Transaction, TransactionType
 from users.models import User
 
@@ -28,7 +28,7 @@ def create_account(user: User, currency: str = "RUB") -> BankAccount:
 
 def create_transfer(sender: BankAccount, receiver: BankAccount, amount: Decimal):
     t_type, _ = TransactionType.objects.get_or_create(name="Transfer")
-    
+
     if sender.currency != receiver.currency:
         converted_amount = Transaction.convert_to(
             sender.currency,

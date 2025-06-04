@@ -2,6 +2,7 @@
 .venv*
 venv/
 .idea/
+
 # Settings 
 *.env*
 
@@ -15,3 +16,12 @@ __pycache__/
 
 # DataBase
 db.*
+
+# Test
+test.py
+
+# VSCode 
+.VScode*
+
+# SQL 
+*.sqlite3-query
