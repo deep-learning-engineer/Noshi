@@ -44,7 +44,7 @@ class BankAccount(models.Model):
         on_delete=models.PROTECT,
         related_name='owned_accounts'
     )
-    
+
     class Meta:
         db_table = 'bank_accounts'
 
@@ -68,7 +68,7 @@ class BankAccount(models.Model):
 class PaymentSystemCounter(models.Model):
     payment_system = models.CharField(max_length=4, choices=BankAccount.PAYMENT_SYSTEMS, unique=True)
     last_number = models.PositiveIntegerField(default=0)
-    
+
     class Meta:
         db_table = 'payment_system_counter'
 
@@ -94,12 +94,36 @@ class UserBankAccount(models.Model):
         on_delete=models.PROTECT,
         related_name='bank_accounts'
     )
-    
-    class Meta:
-        db_table = 'user_bank_accounts'
 
     class Meta:
+        db_table = 'user_bank_accounts'
         unique_together = (('bank_account', 'user'),)
 
     def __str__(self):
         return f"UserBankAccount: {self.user} - {self.bank_account}"
+
+
+class BankAccountInvitation(models.Model):
+    INVITATION_STATUS = [
+        ('pending', 'Pending'),
+        ('rejected', 'Rejected'),
+    ]
+
+    account = models.ForeignKey(
+        BankAccount,
+        on_delete=models.CASCADE,
+        related_name='invitations'
+    )
+    invitee = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='received_invitations'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'bank_account_invitations'
+        unique_together = (('account', 'invitee'),)
+
+    def __str__(self):
+        return f"Invitation for {self.invitee} to account {self.account}"

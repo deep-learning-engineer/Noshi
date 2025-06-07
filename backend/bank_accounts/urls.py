@@ -3,12 +3,22 @@ from .views import (
     BankAccountCreateView,
     UserBankAccountsListView,
     BankAccountDetailView,
-    UserByPhoneView
+    UserByPhoneView,
+    ChangeAccountUsersView,
+    UserInvitationsListView,
+    BankAccountInvitationView
 )
 
 urlpatterns = [
     path('accounts/create/', BankAccountCreateView.as_view(), name='account-create'),
     path('accounts/', UserBankAccountsListView.as_view(), name='account-list'),
     path('accounts/<str:account_number>/', BankAccountDetailView.as_view(), name='account-detail'),
-    path('accounts/phone/<str:phone>/', UserByPhoneView.as_view(), name='account-phone')
+    path('accounts/phone/<str:phone>/', UserByPhoneView.as_view(), name='account-phone'),
+    path('invitations/<str:account_number>/<str:phone>/',
+         ChangeAccountUsersView.as_view(),
+         name='change-user-to-account'),
+    path('invitations/', UserInvitationsListView.as_view(), name='user-invitations-list'),
+    path('invitations/action/',
+         BankAccountInvitationView.as_view(),
+         name='bank-account-invitation-action-by-account')
 ]

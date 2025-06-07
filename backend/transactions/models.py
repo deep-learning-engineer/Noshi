@@ -1,20 +1,17 @@
-import os
 import requests
 
-from dotenv import load_dotenv
 from decimal import Decimal
 from django.db import models
 from django.db import transaction as db_transaction
 
 from bank_accounts.models import BankAccount
-
-load_dotenv()
+from core.config import AppConfig
 
 
 class TransactionType(models.Model):
     type_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50)
-    
+
     class Meta:
         db_table = "transaction_type"
 
@@ -50,15 +47,16 @@ class Transaction(models.Model):
         on_delete=models.PROTECT,
         related_name='received_transactions'
     )
-    
+
     class Meta:
         db_table = 'transactions'
 
     @staticmethod
     def convert_to(currency_sender, currency_receiver, amount):
-        URL = os.getenv("CURRENCY_API")
         try:
-            response = requests.get(URL, params={"base_currency": currency_sender, "currencies": currency_receiver})
+            response = requests.get(
+                AppConfig.CURRENCY_API_URL,
+                params={"base_currency": currency_sender, "currencies": currency_receiver})
             response.raise_for_status()
             data = response.json()
 
