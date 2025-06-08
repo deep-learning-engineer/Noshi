@@ -9,6 +9,12 @@ from .models import User
 
 
 class UserRegistrationView(generics.CreateAPIView):
+    """
+    API view for user registration.
+
+    This endpoint allows new users to create an account by providing
+    the necessary registration details.
+    """
     queryset = User.objects.all()
     serializer_class = UserRegistrationSerializer
     permission_classes = (AllowAny,)
@@ -25,6 +31,12 @@ class UserRegistrationView(generics.CreateAPIView):
 
 
 class UserLoginView(generics.GenericAPIView):
+    """
+    API view for user authentication (login).
+
+    This endpoint authenticates a user using their credentials. Upon successful
+    validation, it logs the user into the Django session and returns a success message.
+    """
     serializer_class = UserLoginSerializer
     permission_classes = (AllowAny,)
 
@@ -42,6 +54,11 @@ class UserLoginView(generics.GenericAPIView):
 
 
 class ProfileView(generics.RetrieveAPIView):
+    """
+    API view for retrieving the authenticated user's profile information.
+
+    This endpoint provides access to the current user's details.
+    """
     serializer_class = UserSerializer
 
     def get_object(self):
@@ -49,6 +66,11 @@ class ProfileView(generics.RetrieveAPIView):
 
 
 class LogoutView(APIView):
+    """
+    API view for user logout.
+
+    This endpoint logs out the currently authenticated user from the Django session.
+    """
 
     def post(self, request):
         logout(request)

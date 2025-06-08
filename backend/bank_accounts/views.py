@@ -23,6 +23,13 @@ from .serializers import (
 
 
 class BankAccountCreateView(generics.CreateAPIView):
+    """
+    API view for authenticated users to create a new bank account.
+
+    Users are restricted by the `MAX_ACCOUNTS_PER_USER` limit defined in `AppConfig`
+    for active or frozen accounts. Upon successful creation, the user is automatically
+    linked as a member of the new bank account.
+    """
     serializer_class = BankAccountSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -47,6 +54,11 @@ class BankAccountCreateView(generics.CreateAPIView):
 
 
 class UserBankAccountsListView(generics.ListAPIView):
+    """
+    API view to list all bank accounts associated with the authenticated user.
+
+    This view retrieves accounts where the user is either the owner or a linked member.
+    """
     serializer_class = BankAccountSerializer
 
     def get_queryset(self):
@@ -56,6 +68,11 @@ class UserBankAccountsListView(generics.ListAPIView):
 
 
 class BankAccountDetailView(generics.RetrieveAPIView):
+    """
+    API view to retrieve details of a specific bank account by its account number.
+
+    The authenticated user must be a member of the account to view its details.
+    """
     serializer_class = BankAccountSerializer
     lookup_field = 'account_number'
     lookup_url_kwarg = 'account_number'
@@ -67,6 +84,12 @@ class BankAccountDetailView(generics.RetrieveAPIView):
 
 
 class UserByPhoneView(APIView):
+    """
+    API view to retrieve user details by phone number.
+
+    This view is typically used to find and verify a user by their phone number,
+    for example, when inviting them to a shared bank account.
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, phone):
@@ -82,6 +105,14 @@ class UserByPhoneView(APIView):
 
 
 class ChangeAccountUsersView(APIView):
+    """
+    API view to manage users associated with a bank account.
+
+    Allows the account owner (implicitly, via permissions) to send invitations
+    to other users (POST) or remove existing users (DELETE) from a shared account.
+    Prevents inviting users already in the account or those exceeding their
+    maximum account limit.
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, account_number, phone):
@@ -147,6 +178,12 @@ class ChangeAccountUsersView(APIView):
 
 
 class UserInvitationsListView(generics.ListAPIView):
+    """
+    API view for an authenticated user to list all bank account invitations they have received.
+
+    This view provides a comprehensive list of pending invitations, allowing the user
+    to see who invited them and to which account.
+    """
     serializer_class = UserInvitationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -157,6 +194,13 @@ class UserInvitationsListView(generics.ListAPIView):
 
 
 class BankAccountInvitationView(APIView):
+    """
+    API view for an authenticated user to accept or decline a bank account invitation
+    using a bank account number.
+
+    Upon acceptance, the user becomes a member of the bank account, unless its maximum account limit is exceeded,
+    and the invitation is deleted. Upon rejection, the invitation is simply deleted.
+    """
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):

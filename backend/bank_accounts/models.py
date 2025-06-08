@@ -104,11 +104,6 @@ class UserBankAccount(models.Model):
 
 
 class BankAccountInvitation(models.Model):
-    INVITATION_STATUS = [
-        ('pending', 'Pending'),
-        ('rejected', 'Rejected'),
-    ]
-
     account = models.ForeignKey(
         BankAccount,
         on_delete=models.CASCADE,

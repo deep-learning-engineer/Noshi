@@ -11,9 +11,20 @@ from django.utils import timezone
 from .models import Transaction
 from .serializers import TransactionSerializer
 from bank_accounts.models import BankAccount
+from users.serializers import UserSerializer
 
 
 class TransactionView(APIView):
+    """
+    API view for creating new financial transactions between bank accounts.
+
+    This endpoint facilitates the initiation of a direct money transfer
+    from a sender's account to a receiver's account. It expects valid
+    account numbers and an amount. Upon successful processing by the
+    `Transaction.create_transaction` static method, it returns a
+    summary of the initiated transfer, including receiver's basic
+    information and currency details.
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -30,13 +41,12 @@ class TransactionView(APIView):
             )
 
             receiver_user = data['receiver_account'].owner
+            receiver_info = UserSerializer(receiver_user).data
+
             response_data = {
                 'sender_account': data['sender_account'].account_number,
                 'receiver_account': data['receiver_account'].account_number,
-                'receiver_info': {
-                    'first_name': receiver_user.first_name,
-                    'last_name': receiver_user.last_name
-                },
+                'receiver_info': receiver_info,
                 'amount': str(data['amount']),
                 'currency': data['sender_account'].currency,
                 'description': data.get('description')
@@ -55,6 +65,14 @@ class TransactionView(APIView):
 
 
 class TransactionPreviewView(APIView):
+    """
+    API view for previewing potential financial transactions.
+
+    This endpoint allows users to see the details of a transaction before
+    committing it, especially useful for cross-currency transfers. It calculates
+    and displays the converted amount based on the provided sender and receiver
+    accounts' currencies. No transaction is created by this endpoint.
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -69,13 +87,12 @@ class TransactionPreviewView(APIView):
         )
 
         receiver_user = data['receiver_account'].owner
+        receiver_info = UserSerializer(receiver_user).data
+
         response_data = {
             'sender_account': data['sender_account'].account_number,
             'receiver_account': data['receiver_account'].account_number,
-            'receiver_info': {
-                'first_name': receiver_user.first_name,
-                'last_name': receiver_user.last_name
-            },
+            'receiver_info': receiver_info,
             'sender_currency': data['sender_account'].currency,
             'receiver_currency': data['receiver_account'].currency,
             'original_amount': str(data['amount']),
@@ -87,6 +104,18 @@ class TransactionPreviewView(APIView):
 
 
 class UserTransactionsView(APIView):
+    """
+    API view for retrieving a list of transactions associated with the authenticated user's accounts.
+
+    This endpoint supports extensive filtering capabilities, allowing users to
+    query transactions by:
+        - `type`: 'all', 'income', or 'outcome' (default: 'all')
+        - `period`: 'all', 'year', 'month', 'week', 'today', 'yesterday', or a specific date in 'YYYY-MM-DD' format (default: 'all')
+        - `account`: A specific bank account number, or 'all' for all user's accounts (default: 'all')
+
+    The response is structured to group transactions by date and provides
+    summary statistics (total income/outcome per currency) for the filtered set.
+    """ # noqa
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -167,7 +196,9 @@ class UserTransactionsView(APIView):
             time = create_at.strftime("%Y-%m-%d %H:%M")
             is_income = transaction.receiver_account_id in user_accounts
             currency = transaction.receiver_account.currency if is_income else transaction.sender_account.currency
-            user = transaction.sender_account.owner if is_income else transaction.receiver_account.owner
+
+            user_for_info = transaction.sender_account.owner if is_income else transaction.receiver_account.owner
+            user_info = UserSerializer(user_for_info).data
 
             if is_income:
                 amount = transaction.converted_amount
@@ -182,10 +213,7 @@ class UserTransactionsView(APIView):
                 'amount': amount,
                 'currency': currency,
                 'description': transaction.description,
-                'user_info': {
-                    'first_name': user.first_name,
-                    'last_name': user.last_name
-                }
+                'user_info': user_info
             }
 
             transactions_data.setdefault(date, []).append(transaction_data)
@@ -202,10 +230,7 @@ class UserTransactionsView(APIView):
                     'amount': amount,
                     'currency': currency,
                     'description': transaction.description,
-                    'user_info': {
-                        'first_name': user.first_name,
-                        'last_name': user.last_name
-                    }
+                    'user_info': user_info
                 }
 
                 transactions_data.setdefault(date, []).append(transaction_data)

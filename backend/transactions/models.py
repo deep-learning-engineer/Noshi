@@ -105,5 +105,5 @@ class Transaction(models.Model):
         return transaction
 
     def __str__(self):
-        return f"Transaction {self.transaction_id} - {self.amount} ({self.sender_account.currency}) → \
-                {self.converted_amount or self.amount} ({self.receiver_account.currency})"
+        return (f"Transaction {self.transaction_id} - {self.amount} ({self.sender_account.currency}) → "
+                f"{self.converted_amount or self.amount} ({self.receiver_account.currency})")
