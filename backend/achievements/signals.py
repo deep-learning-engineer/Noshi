@@ -7,6 +7,12 @@ from .logic import (
     award_big_wallet,
     award_loyal_client,
     award_currency_broker,
+    award_family_bank,
+    award_reverse_transfer,
+    award_generosity,
+    award_self_transfer,
+    award_chain_reaction,
+    award_payment_explorer,
 )
 
 
@@ -37,3 +43,9 @@ def on_transaction_save(sender, instance, created, **kwargs):
         award_first_transaction(user, account_ids, transaction_count)
         award_loyal_client(user, transaction_count)
         award_currency_broker(user, sender_currency, receiver_currency)
+        award_family_bank(user)
+        award_reverse_transfer(user, instance.receiver_account.owner)
+        award_generosity(user)
+        award_self_transfer(user, instance.sender_account, instance.receiver_account)
+        award_chain_reaction(user, instance.sender_account)
+        award_payment_explorer(user)
