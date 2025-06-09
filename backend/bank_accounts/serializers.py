@@ -36,19 +36,16 @@ class BankAccountSerializer(serializers.ModelSerializer):
         return UserSerializer([ua.user for ua in obj.users.all()], many=True).data
 
 
-class UserAccountsSerializer(serializers.ModelSerializer):
-    account_numbers = serializers.SerializerMethodField()
+class PublicBankAccountSerializer(serializers.ModelSerializer):
+    owner = UserSerializer(read_only=True)
 
     class Meta:
-        model = User
-        fields = ['first_name', 'last_name', 'account_numbers']
-
-    def get_account_numbers(self, obj):
-        return list(
-            obj.bank_accounts.filter(
-                bank_account__status='active'
-            ).values_list('bank_account__account_number', flat=True)
-        )
+        model = BankAccount
+        fields = [
+            'account_number',
+            'owner',
+            'currency',
+        ]
 
 
 class ChangeAccountUsersSerializer(serializers.Serializer):

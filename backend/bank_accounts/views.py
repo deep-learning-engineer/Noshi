@@ -2,7 +2,7 @@ from rest_framework import status, generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 from django.db import IntegrityError
 
 from core.config import AppConfig
@@ -15,7 +15,7 @@ from .models import (
 )
 from .serializers import (
     BankAccountSerializer,
-    UserAccountsSerializer,
+    PublicBankAccountSerializer,
     ChangeAccountUsersSerializer,
     UserInvitationSerializer,
     BankAccountInvitationSerializer
@@ -69,18 +69,33 @@ class UserBankAccountsListView(generics.ListAPIView):
 
 class BankAccountDetailView(generics.RetrieveAPIView):
     """
-    API view to retrieve details of a specific bank account by its account number.
+    API view to get details of a specific bank account by its number.
 
-    The authenticated user must be a member of the account to view its details.
+    Authenticated user must be a member of the account to view its full details
+    otherwise can only get information about the owner and currency of the account.
     """
+    permission_classes = [IsAuthenticated]
     serializer_class = BankAccountSerializer
     lookup_field = 'account_number'
     lookup_url_kwarg = 'account_number'
 
-    def get_queryset(self):
-        return BankAccount.objects.filter(
-            users__user=self.request.user
-        )
+    def get(self, request, account_number):
+        try:
+            requested_account = BankAccount.objects.get(account_number=account_number)
+        except BankAccount.DoesNotExist:
+            raise NotFound({"detail": "Bank account not found."})
+
+        is_user_member = BankAccount.objects.filter(
+            pk=requested_account.pk,
+            users__user=request.user
+        ).exists()
+
+        if is_user_member:
+            serializer = BankAccountSerializer(requested_account)
+        else:
+            serializer = PublicBankAccountSerializer(requested_account)
+
+        return Response(serializer.data)
 
 
 class UserByPhoneView(APIView):
@@ -94,14 +109,20 @@ class UserByPhoneView(APIView):
 
     def get(self, request, phone):
         try:
-            user = User.objects.get(phone=phone)
-            serializer = UserAccountsSerializer(user)
-            return Response(serializer.data)
+            user_found_by_phone = User.objects.get(phone=phone)
         except User.DoesNotExist:
             return Response(
                 {"error": "User with this phone number not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+        active_accounts_for_user = BankAccount.objects.filter(
+            users__user=user_found_by_phone,
+            status='active'
+        )
+
+        serializer = PublicBankAccountSerializer(active_accounts_for_user, many=True)
+        return Response(serializer.data)
 
 
 class ChangeAccountUsersView(APIView):

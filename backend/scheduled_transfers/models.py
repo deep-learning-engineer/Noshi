@@ -88,15 +88,15 @@ class ScheduledTransfers(models.Model):
                 if month > 12:
                     month = 1
                     year += 1
-                
+
                 day = min(target_day_of_month, calendar.monthrange(year, month)[1])
-                
+
                 next_date = next_date.replace(year=year, month=month, day=day)
             elif self.frequency == 'annually':
                 year = next_date.year + 1
                 month = next_date.month
                 day = min(target_day_of_month, calendar.monthrange(year, month)[1])
-                
+
                 next_date = next_date.replace(year=year, month=month, day=day)
             else:
                 return None
