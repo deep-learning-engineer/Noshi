@@ -28,3 +28,6 @@ test.py
 
 # Currencies
 *.json
+
+# Logs
+*.log

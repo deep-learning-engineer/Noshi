@@ -214,6 +214,26 @@ class UserInvitationsListView(generics.ListAPIView):
         )
 
 
+class BankAccountInvitationsListView(generics.ListAPIView):
+    """
+    An API representation for an authenticated user to retrieve a list of
+    all invitations they have sent for a given bank account.
+    """
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        account_number = self.kwargs['account_number']
+        invitations = BankAccountInvitation.objects.filter(
+            account__owner=self.request.user,
+            account__account_number=account_number
+        ).select_related('invitee')
+
+        return User.objects.filter(
+            id__in=invitations.values_list('invitee_id', flat=True)
+        )
+
+
 class BankAccountInvitationView(APIView):
     """
     API view for an authenticated user to accept or decline a bank account invitation

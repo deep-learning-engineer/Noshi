@@ -22,11 +22,9 @@ def _award(user: User, achievement: Achievement) -> None:
 
 
 def award_big_wallet(user: User, date, user_account_ids: Iterable[int]) -> None:
-    user_spent = (
-            Transaction.objects.filter(
-                sender_account_id__in=user_account_ids,
-                created_at__date=date,
-            ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    user_spent = (Transaction.objects.filter(
+        sender_account_id__in=user_account_ids,
+        created_at__date=date,).aggregate(total=Sum('amount'))['total'] or Decimal('0')
     )
 
     if user_spent >= Decimal('100000'):
