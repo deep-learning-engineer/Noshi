@@ -194,45 +194,36 @@ class UserTransactionsView(APIView):
             create_at = transaction.created_at
             date = create_at.strftime("%Y-%m-%d")
             time = create_at.strftime("%Y-%m-%d %H:%M")
-            is_income = transaction.receiver_account_id in user_accounts
-            currency = transaction.receiver_account.currency if is_income else transaction.sender_account.currency
 
-            user_for_info = transaction.sender_account.owner if is_income else transaction.receiver_account.owner
-            user_info = UserSerializer(user_for_info).data
-
-            if is_income:
+            if transaction.receiver_account_id in user_accounts and transaction_type != 'outcome':
+                currency = transaction.receiver_account.currency
                 amount = transaction.converted_amount
+                transaction_data = {
+                    'date': time,
+                    'type': 'income',
+                    'amount': amount,
+                    'currency': currency,
+                    'description': transaction.description,
+                    'user_info': UserSerializer(transaction.sender_account.owner).data
+                }
+
                 total_income[currency] = total_income.setdefault(currency, Decimal('0')) + amount
-            else:
-                amount = transaction.amount
-                total_outcome[currency] = total_outcome.setdefault(currency, Decimal('0')) + amount
+                transactions_data.setdefault(date, []).append(transaction_data)
+                count += 1
 
-            transaction_data = {
-                'date': time,
-                'type': 'income' if is_income else 'outcome',
-                'amount': amount,
-                'currency': currency,
-                'description': transaction.description,
-                'user_info': user_info
-            }
-
-            transactions_data.setdefault(date, []).append(transaction_data)
-            count += 1
-
-            if is_income and transaction.sender_account_id in user_accounts:
+            elif transaction.sender_account_id in user_accounts and transaction_type != 'income':
                 currency = transaction.sender_account.currency
                 amount = transaction.amount
-                total_outcome[currency] = total_outcome.setdefault(currency, Decimal('0')) + amount
-
                 transaction_data = {
                     'date': time,
                     'type': 'outcome',
                     'amount': amount,
-                    'currency': currency,
+                    'currency': transaction.sender_account.currency,
                     'description': transaction.description,
-                    'user_info': user_info
+                    'user_info': UserSerializer(transaction.receiver_account.owner).data
                 }
 
+                total_outcome[currency] = total_outcome.setdefault(currency, Decimal('0')) + amount
                 transactions_data.setdefault(date, []).append(transaction_data)
                 count += 1
 

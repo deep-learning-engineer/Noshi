@@ -1,5 +1,6 @@
 import requests
 
+from rest_framework.serializers import ValidationError
 from decimal import Decimal
 from django.db import models
 from django.db import transaction as db_transaction
@@ -35,7 +36,7 @@ class Transaction(models.Model):
     converted_amount = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        help_text="Сумма в валюте получателя после конвертации",
+        help_text="Amount in recipient's currency after conversion",
     )
     sender_account = models.ForeignKey(
         BankAccount,
@@ -66,7 +67,7 @@ class Transaction(models.Model):
             rate = data['data'][currency_receiver]['value']
             return amount * Decimal(rate)
         except (requests.RequestException, ValueError) as e:
-            raise ValueError("Currency conversion between different currencies is currently unavailable") from e
+            raise ValueError(f"Currency conversion between different currencies is currently unavailable: {e}")
 
     @classmethod
     def create_transaction(cls, sender_account, receiver_account, amount, description=""):

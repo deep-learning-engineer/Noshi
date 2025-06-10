@@ -1,11 +1,13 @@
 import calendar
 
 from django.db import models
-from bank_accounts.models import BankAccount
+from django.db import transaction as db_transaction
+from rest_framework.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
 
 from transactions.models import Transaction
+from bank_accounts.models import BankAccount
 
 
 class ScheduledTransfers(models.Model):
@@ -37,7 +39,7 @@ class ScheduledTransfers(models.Model):
     )
     next_occurrence_date = models.DateField(null=True, blank=True)
     start_date = models.DateField()
-    end_date = models.DateField()
+    end_date = models.DateField(null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -108,32 +110,49 @@ class ScheduledTransfers(models.Model):
 
     def process_and_reschedule(self):
         """
-        Попытки выполнить перевод и, если успешно, запланировать следующую дату.
-        Возвращает True, если перевод успешно выполнен и расписание обновлено, False в противном случае.
+        Attempts to execute the transfer.
+        If successful, it reschedules the next occurrence or deletes if the series is complete.
+        If the transfer fails due to insufficient funds or a similar *recoverable* error,
+        it reschedules for the next occurrence without deleting the schedule.
+        For *critical* errors, the scheduled transfer is deleted.
+        Returns True if the operation (execution/reschedule/deletion) is handled, False otherwise.
         """
-        try:
-            Transaction.create_transaction(
-                sender_account=self.sender_account,
-                receiver_account=self.receiver_account,
-                amount=self.amount,
-                description=self.description
-            )
+        scheduled_transfer_id = self.pk
+        log_prefix = f"Scheduled Transfer ID {scheduled_transfer_id}:"
 
-            next_calculated_date = self.calculate_next_occurrence_date_for_scheduling()
-            if next_calculated_date:
-                self.next_occurrence_date = next_calculated_date
-                self.save(update_fields=['next_occurrence_date', 'updated_at'])
-                return True
-            else:
-                # Если next_calculated_date == None, это означает, что серия завершена.
-                # Удаляем запланированный перевод.
-                scheduled_transfer_id = self.pk
-                self.delete()
-                print(f"DEBUG: Запланированный перевод ID {scheduled_transfer_id} удален, так как его серия завершена.")
+        next_calculated_date = None
+
+        try:
+            with db_transaction.atomic():
+                next_calculated_date = self.calculate_next_occurrence_date_for_scheduling()
+
+                Transaction.create_transaction(
+                    sender_account=self.sender_account,
+                    receiver_account=self.receiver_account,
+                    amount=self.amount,
+                    description=self.description
+                )
+                print(f"DEBUG: {log_prefix} Transaction successfully created.")
+
+                if self.frequency == 'once' or next_calculated_date is None:
+                    self.delete()
+                    print(f"DEBUG: {log_prefix} Deleted as series completed or was 'once'.")
+                else:
+                    self.next_occurrence_date = next_calculated_date
+                    self.save(update_fields=['next_occurrence_date', 'updated_at'])
+                    print(f"DEBUG: {log_prefix} Rescheduled to {self.next_occurrence_date}.")
+
                 return True
 
         except Exception as e:
-            print(f"ERROR: Ошибка выполнения запланированного перевода ID {self.pk}: {e}")
-            self.next_occurrence_date = None
-            self.save(update_fields=['next_occurrence_date', 'updated_at'])
+            print(f"WARNING: {log_prefix} Failed due to recoverable error (e.g., insufficient funds): {e}")
+
+            if self.frequency == 'once' or next_calculated_date is None:
+                self.delete()
+                print(f"DEBUG: {log_prefix} Deleted after single attempt failure (was 'once' or series ended).")
+            else:
+                self.next_occurrence_date = next_calculated_date
+                self.save(update_fields=['next_occurrence_date', 'updated_at'])
+                print(f"DEBUG: {log_prefix} Rescheduled to {self.next_occurrence_date} after recoverable failure.")
+
             return False

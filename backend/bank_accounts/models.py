@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import CheckConstraint, Q
+
 from users.models import User
 
 
@@ -47,6 +49,12 @@ class BankAccount(models.Model):
 
     class Meta:
         db_table = 'bank_accounts'
+        constraints = [
+            CheckConstraint(
+                check=Q(balance__gte=0),
+                name='balance_not_negative'
+            )
+        ]
 
     def __str__(self):
         return f"Bank Account: {self.account_number} - {self.balance}"

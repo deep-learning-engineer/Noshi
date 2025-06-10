@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'users',
     'bank_accounts',
     'transactions',
+    'scheduled_transfers',
     'achievements.apps.AchievementsConfig'
 ]
 

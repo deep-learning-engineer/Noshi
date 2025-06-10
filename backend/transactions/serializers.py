@@ -49,10 +49,6 @@ class TransactionSerializer(serializers.Serializer):
     def validate(self, data):
         sender = data['sender_account']
         receiver = data['receiver_account']
-        amount = data['amount']
-
-        if sender.balance < amount:
-            raise serializers.ValidationError({"amount": "Insufficient funds in sender's account"})
 
         if sender == receiver:
             raise serializers.ValidationError("Cannot transfer to the same account")
