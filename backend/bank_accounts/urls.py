@@ -22,7 +22,7 @@ urlpatterns = [
     path('invitations/<str:account_number>/<str:phone>/',
          ChangeAccountUsersView.as_view(),
          name='change-user-to-account'),
-    path('invitations/action/',
+    path('invitations/action',
          BankAccountInvitationView.as_view(),
          name='bank-account-invitation-action-by-account')
 ]

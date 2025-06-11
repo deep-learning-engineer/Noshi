@@ -42,6 +42,7 @@ SESSION_COOKIE_AGE = 1209600
 
 INSTALLED_APPS = [
     'rest_framework',
+    'django_extensions',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

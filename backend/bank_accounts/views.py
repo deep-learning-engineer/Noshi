@@ -130,9 +130,9 @@ class ChangeAccountUsersView(APIView):
     API view to manage users associated with a bank account.
 
     Allows the account owner (implicitly, via permissions) to send invitations
-    to other users (POST) or remove existing users (DELETE) from a shared account.
-    Prevents inviting users already in the account or those exceeding their
-    maximum account limit.
+    to other users (POST) or remove existing users (or user invitations) (DELETE) from the shared account.
+    Prevents inviting users already in the account or those who have exceeded the account's
+    maximum limit.
     """
     permission_classes = [IsAuthenticated]
 
@@ -190,10 +190,18 @@ class ChangeAccountUsersView(APIView):
         ).delete()
 
         if deleted_count == 0:
-            raise ValidationError(
-                {"error": "The user is not present in this account"},
-                code=status.HTTP_400_BAD_REQUEST
-            )
+            deleted_count, _ = BankAccountInvitation.objects.filter(
+                account=account,
+                invitee=user
+            ).delete()
+
+            if deleted_count == 0:
+                raise ValidationError(
+                    {"error": "The user was not invited or was not a member of this bank account"},
+                    code=status.HTTP_400_BAD_REQUEST
+                )
+
+            return Response("The invitation was successfully removed", status=status.HTTP_200_OK)
 
         return Response("The user was successfully deleted", status=status.HTTP_200_OK)
 
