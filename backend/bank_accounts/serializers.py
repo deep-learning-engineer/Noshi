@@ -63,7 +63,7 @@ class ChangeAccountUsersSerializer(serializers.Serializer):
                 owner=request.user
             )
             if account.status != 'active':
-                raise serializers.ValidationError("Only active user accounts can be modified")
+                raise serializers.ValidationError("Only an active bank account can be changed")
 
             user = User.objects.get(phone=phone)
             if user == request.user:

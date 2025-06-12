@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import BankAccount
+
+from .models import BankAccount, Transaction
 from decimal import Decimal
 
 
@@ -25,11 +26,8 @@ class TransactionSerializer(serializers.Serializer):
             if not request:
                 raise serializers.ValidationError("Request context is missing")
 
-            if not account.is_active():
-                raise serializers.ValidationError({"sender_account": "Sender account is not active"})
-
             if not account.users.filter(user=request.user).exists():
-                raise serializers.ValidationError("You are not the owner of this account")
+                raise serializers.ValidationError("You are not a member of the bank account")
 
             return account
         except BankAccount.DoesNotExist:
@@ -39,9 +37,6 @@ class TransactionSerializer(serializers.Serializer):
         try:
             account = BankAccount.objects.get(account_number=value)
 
-            if not account.is_active():
-                raise serializers.ValidationError({"receiver_account": "Receiver account is not active"})
-
             return account
         except BankAccount.DoesNotExist:
             raise serializers.ValidationError("Receiver account does not exist")
@@ -49,8 +44,7 @@ class TransactionSerializer(serializers.Serializer):
     def validate(self, data):
         sender = data['sender_account']
         receiver = data['receiver_account']
+        amount = data['amount']
 
-        if sender == receiver:
-            raise serializers.ValidationError("Cannot transfer to the same account")
-
+        Transaction.validate_accounts(sender, receiver, amount)
         return data

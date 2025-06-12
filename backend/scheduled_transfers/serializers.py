@@ -48,32 +48,35 @@ class ScheduledTransferSerializer(serializers.ModelSerializer):
             data['sender_account'] = sender_account
         except BankAccount.DoesNotExist:
             raise serializers.ValidationError(
-                {"sender_account": "The sender's account was not found, was not activated, or you do not have access to it."} # noqa
+                {"sender_account": "The sender's account was not found, was not activated, or you do not have access to it"} # noqa
             )
 
         try:
-            receiver_account = BankAccount.objects.get(account_number=receiver_account)
+            receiver_account = BankAccount.objects.get(
+                account_number=receiver_account,
+                status='active'
+            )
             data['receiver_account'] = receiver_account
         except BankAccount.DoesNotExist:
-            raise serializers.ValidationError({"receiver_account": "Recipient account not found."})
+            raise serializers.ValidationError({"receiver_account": "The recipient's bank account was not found or is not active"}) # noqa
 
         if sender_account.pk == receiver_account.pk:
             raise serializers.ValidationError(
-                {"receiver_account": "The sender and recipient account cannot be the same."}
+                {"receiver_account": "The sender and recipient account cannot be the same"}
             )
 
         if amount <= Decimal('0.01'):
             raise serializers.ValidationError({"amount": "The transfer amount must be at least 0.01"})
 
         if start_date < today:
-            raise serializers.ValidationError({"start_date": "The start date cannot be in the past."})
+            raise serializers.ValidationError({"start_date": "The start date cannot be in the past"})
 
         if end_date:
             if end_date < start_date:
-                raise serializers.ValidationError({"end_date": "The end date cannot be earlier than the start date."})
+                raise serializers.ValidationError({"end_date": "The end date cannot be earlier than the start date"})
             if frequency == 'once' and end_date != start_date:
                  raise serializers.ValidationError( # noqa
-                     {"end_date": "For a one-time transfer the end date must match the start date or be empty."}
+                     {"end_date": "For a one-time transfer the end date must match the start date or be empty"}
                  )
 
         return data

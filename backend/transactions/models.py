@@ -53,6 +53,27 @@ class Transaction(models.Model):
         db_table = 'transactions'
 
     @staticmethod
+    def validate_accounts(sender_account, receiver_account, amount):
+        """
+        Proves whether a transfer between accounts is possible.
+        Called before creating transactions (in serializer and scheduled transfers).
+
+        Raises:
+        ValidationError: If the transfer is not possible.
+        """
+        if sender_account == receiver_account:
+            raise ValidationError("Cannot transfer to the same account")
+
+        if not sender_account.is_active():
+            raise ValidationError({"sender_account": "Sender account is not active"})
+
+        if not receiver_account.is_active():
+            raise ValidationError({"receiver_account": "Receiver account is not active"})
+
+        if sender_account.balance < amount:
+            raise ValidationError("Insufficient funds in the sender account")
+
+    @staticmethod
     def convert_to(currency_sender, currency_receiver, amount):
         try:
             response = requests.get(
@@ -72,6 +93,8 @@ class Transaction(models.Model):
     @classmethod
     def create_transaction(cls, sender_account, receiver_account, amount, description=""):
         with db_transaction.atomic():
+            cls.validate_accounts(sender_account, receiver_account, amount)
+
             transaction_type, _ = TransactionType.objects.get_or_create(
                 name="Transfer",
                 defaults={'name': 'Transfer'}

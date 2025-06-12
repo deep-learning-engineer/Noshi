@@ -62,6 +62,25 @@ class BankAccount(models.Model):
     def is_active(self):
         return self.status == 'active'
 
+    def close_account(self):
+        """
+        Close the bank account if conditions are met.
+
+        Args:
+            user: User who is trying to close the account
+
+        Raises:
+            ValueError: If account cannot be closed
+        """
+        if self.status == 'closed':
+            raise ValueError("Account is already closed")
+
+        if self.balance != 0:
+            raise ValueError("Cannot close account with non-zero balance")
+
+        self.status = 'closed'
+        self.save()
+
     def save(self, *args, **kwargs):
         if not self.account_number:
             prefix = self.PREFIXES[self.payment_system]

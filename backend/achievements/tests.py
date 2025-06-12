@@ -45,7 +45,7 @@ def create_user(email: str, phone: str, first: str = "Foo", last: str = "Bar") -
 
 
 def create_account(user: User, currency: str = "RUB") -> BankAccount:
-    account = BankAccount.objects.create(owner=user, currency=currency)
+    account = BankAccount.objects.create(owner=user, currency=currency, balance=10000000)
     UserBankAccount.objects.create(user=user, bank_account=account)
     return account
 
@@ -81,14 +81,14 @@ def create_transfer(sender: BankAccount, receiver: BankAccount, amount: Decimal)
 
 
 @pytest.fixture
-def users() -> (User, User):
+def users() -> tuple[User]:
     sender = create_user("sender@example.com", "70000000000", "Send", "User")
     receiver = create_user("receiver@example.com", "71111111111", "Recv", "User")
     return sender, receiver
 
 
 @pytest.fixture
-def accounts(users) -> (BankAccount, BankAccount, BankAccount):
+def accounts(users) -> tuple[BankAccount]:
     sender_user, receiver_user = users
     sender_acc = create_account(sender_user, "RUB")
     receiver_acc_rub = create_account(receiver_user, "RUB")

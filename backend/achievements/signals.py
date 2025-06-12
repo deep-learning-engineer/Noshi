@@ -40,7 +40,7 @@ def on_transaction_save(sender, instance, created, **kwargs):
         ).count()
 
         award_big_wallet(user, transaction_date, account_ids)
-        award_first_transaction(user, account_ids, transaction_count)
+        award_first_transaction(user, transaction_count)
         award_loyal_client(user, transaction_count)
         award_currency_broker(user, sender_currency, receiver_currency)
         award_family_bank(user)

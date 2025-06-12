@@ -98,6 +98,25 @@ class BankAccountDetailView(generics.RetrieveAPIView):
         return Response(serializer.data)
 
 
+class BankAccountViewSet(APIView):
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'account_number'
+    lookup_url_kwarg = 'account_number'
+
+    def post(self, request, account_number):
+        try:
+            account = BankAccount.objects.get(
+                owner=request.user,
+                account_number=account_number
+            )
+            account.close_account()
+            return Response({"detail": "Account successfully closed"}, status=status.HTTP_200_OK)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except BankAccount.DoesNotExist:
+            raise NotFound({"detail": "Bank account not found."})
+
+
 class UserByPhoneView(APIView):
     """
     API view to retrieve user details by phone number.
