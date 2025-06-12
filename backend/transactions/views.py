@@ -134,7 +134,7 @@ class UserTransactionsView(APIView):
             user_accounts = BankAccount.objects.filter(
                 users__user=user,
                 account_number=account_number
-            )
+            ).values_list('bank_account_id', flat=True)
 
         if not user_accounts:
             return Response(
