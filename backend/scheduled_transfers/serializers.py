@@ -36,7 +36,6 @@ class ScheduledTransferSerializer(serializers.ModelSerializer):
         amount = data.get('amount')
         start_date = data.get('start_date')
         end_date = data.get('end_date')
-        frequency = data.get('frequency')
         today = timezone.localdate()
 
         try:
@@ -71,13 +70,8 @@ class ScheduledTransferSerializer(serializers.ModelSerializer):
         if start_date < today:
             raise serializers.ValidationError({"start_date": "The start date cannot be in the past"})
 
-        if end_date:
-            if end_date < start_date:
-                raise serializers.ValidationError({"end_date": "The end date cannot be earlier than the start date"})
-            if frequency == 'once' and end_date != start_date:
-                 raise serializers.ValidationError( # noqa
-                     {"end_date": "For a one-time transfer the end date must match the start date or be empty"}
-                 )
+        if end_date and end_date < start_date:
+            raise serializers.ValidationError({"end_date": "The end date cannot be earlier than the start date"})
 
         return data
 
@@ -89,8 +83,8 @@ class ScheduledTransferSerializer(serializers.ModelSerializer):
 
 
 class ScheduledTransferListSerializer(serializers.ModelSerializer):
-    sender_account = PublicBankAccountSerializer
-    receiver_account = PublicBankAccountSerializer
+    sender_account = PublicBankAccountSerializer()
+    receiver_account = PublicBankAccountSerializer()
 
     class Meta:
         model = ScheduledTransfers

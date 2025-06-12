@@ -15,6 +15,16 @@ class ScheduledTransferCreateView(generics.CreateAPIView):
     queryset = ScheduledTransfers.objects.all()
     serializer_class = ScheduledTransferSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        return Response(
+            {"detail": "The planned translation has been successfully created."},
+            status=status.HTTP_201_CREATED
+        )
+
 
 class ScheduledTransferListView(generics.ListAPIView):
     """
@@ -49,6 +59,6 @@ class ScheduledTransferDetailView(generics.RetrieveDestroyAPIView):
         instance.delete()
 
         return Response(
-            {"detail": "Scheduled translation ID successfully removed."},
+            {"detail": "Scheduled translation successfully removed."},
             status=status.HTTP_200_OK
         )

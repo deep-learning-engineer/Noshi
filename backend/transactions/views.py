@@ -190,7 +190,7 @@ class UserTransactionsView(APIView):
         total_outcome = {}
         count = 0
 
-        for transaction in transactions:
+        for transaction in transactions.order_by('-created_at'):
             create_at = transaction.created_at
             date = create_at.strftime("%Y-%m-%d")
             time = create_at.strftime("%Y-%m-%d %H:%M")
