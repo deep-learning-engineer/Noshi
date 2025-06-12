@@ -26,8 +26,5 @@ test.py
 # SQL 
 *.sqlite3-query
 
-# Currencies
-*.json
-
 # Logs
 *.log
