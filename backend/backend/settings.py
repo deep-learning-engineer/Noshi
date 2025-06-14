@@ -50,10 +50,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'users',
-    'bank_accounts',
     'transactions',
     'scheduled_transfers',
-    'achievements.apps.AchievementsConfig'
+    'achievements.apps.AchievementsConfig',
+    'backend.apps.BackendConfig',
+    'bank_accounts.apps.BankAccountsConfig',
 ]
 
 AUTH_USER_MODEL = 'users.User'

@@ -14,6 +14,15 @@ from .logic import (
     award_chain_reaction,
     award_payment_explorer,
 )
+from bank_accounts.models import UserBankAccount
+
+
+@receiver(post_save, sender=UserBankAccount)
+def on_co_owner_added(sender, instance, created, **kwargs):
+    if created:
+        owner = instance.bank_account.owner
+        print(owner)
+        award_family_bank(owner)
 
 
 @receiver(post_save, sender=Transaction)
@@ -43,7 +52,6 @@ def on_transaction_save(sender, instance, created, **kwargs):
         award_first_transaction(user, transaction_count)
         award_loyal_client(user, transaction_count)
         award_currency_broker(user, sender_currency, receiver_currency)
-        award_family_bank(user)
         award_reverse_transfer(user, instance.receiver_account.owner)
         award_generosity(user)
         award_self_transfer(user, instance.sender_account, instance.receiver_account)
