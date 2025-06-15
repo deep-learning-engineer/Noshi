@@ -28,3 +28,6 @@ test.py
 
 # Logs
 *.log
+
+# SH
+*.sh
