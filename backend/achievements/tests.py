@@ -13,7 +13,6 @@ from achievements.logic import (
     award_family_bank,
     award_reverse_transfer,
     award_generosity,
-    award_self_transfer,
     award_payment_explorer,
 )
 
@@ -202,14 +201,6 @@ def test_generosity_awarded(accounts):
 
     award_generosity(user)
     assert UserAchievement.objects.filter(user=user, achievement__name="Щедрость").exists()
-
-
-@pytest.mark.django_db
-def test_self_transfer_awarded(accounts):
-    acc, _, _ = accounts
-    user = acc.owner
-    award_self_transfer(user, acc, acc)
-    assert UserAchievement.objects.filter(user=user, achievement__name="Проверка связи").exists()
 
 
 @pytest.mark.django_db

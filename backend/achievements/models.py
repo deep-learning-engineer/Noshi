@@ -10,7 +10,7 @@ class Achievement(models.Model):
 
     class Meta:
         db_table = 'achievements'
-        
+
     def __str__(self):
         return self.name
 

@@ -1,9 +1,9 @@
 from datetime import timedelta
 from typing import Iterable
-
 from django.utils import timezone
 from decimal import Decimal
 from django.db.models import Sum
+
 from bank_accounts.models import UserBankAccount, BankAccount
 from users.models import User
 from .models import Achievement, UserAchievement
