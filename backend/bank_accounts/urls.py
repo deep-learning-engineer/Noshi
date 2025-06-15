@@ -26,5 +26,5 @@ urlpatterns = [
          name='change-user-to-account'),
     path('invitations/action',
          BankAccountInvitationView.as_view(),
-         name='bank-account-invitation-action-by-account')
+         name='bank-account-invitation-action-by-account'),
 ]

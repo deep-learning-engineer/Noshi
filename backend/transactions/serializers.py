@@ -26,7 +26,7 @@ class TransactionSerializer(serializers.Serializer):
             if not request:
                 raise serializers.ValidationError("Request context is missing")
 
-            if not account.users.filter(user=request.user).exists():
+            if not account.users.filter(user=request.user).exists() and account.owner != request.user:
                 raise serializers.ValidationError("You are not a member of the bank account")
 
             return account

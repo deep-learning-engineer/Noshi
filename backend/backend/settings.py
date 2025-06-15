@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'bank_accounts',
     'transactions',
     'scheduled_transfers',
+    'savings_accounts',
     'achievements.apps.AchievementsConfig'
 ]
 

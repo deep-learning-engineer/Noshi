@@ -73,38 +73,36 @@ class ScheduledTransfers(models.Model):
             return None
 
         next_date = current_date_to_calculate_from
-        today = timezone.localdate()
         target_day_of_month = self.start_date.day
 
-        while next_date <= today:
-            if self.frequency == 'daily':
-                next_date += timedelta(days=1)
-            elif self.frequency == 'weekly':
-                next_date += timedelta(weeks=1)
-            elif self.frequency == 'bi-weekly':
-                next_date += timedelta(weeks=2)
-            elif self.frequency == 'monthly':
-                year = next_date.year
-                month = next_date.month + 1
+        if self.frequency == 'daily':
+            next_date += timedelta(days=1)
+        elif self.frequency == 'weekly':
+            next_date += timedelta(weeks=1)
+        elif self.frequency == 'bi-weekly':
+            next_date += timedelta(weeks=2)
+        elif self.frequency == 'monthly':
+            year = next_date.year
+            month = next_date.month + 1
 
-                if month > 12:
-                    month = 1
-                    year += 1
+            if month > 12:
+                month = 1
+                year += 1
 
-                day = min(target_day_of_month, calendar.monthrange(year, month)[1])
+            day = min(target_day_of_month, calendar.monthrange(year, month)[1])
 
-                next_date = next_date.replace(year=year, month=month, day=day)
-            elif self.frequency == 'annually':
-                year = next_date.year + 1
-                month = next_date.month
-                day = min(target_day_of_month, calendar.monthrange(year, month)[1])
+            next_date = next_date.replace(year=year, month=month, day=day)
+        elif self.frequency == 'annually':
+            year = next_date.year + 1
+            month = next_date.month
+            day = min(target_day_of_month, calendar.monthrange(year, month)[1])
 
-                next_date = next_date.replace(year=year, month=month, day=day)
-            else:
-                return None
+            next_date = next_date.replace(year=year, month=month, day=day)
+        else:
+            return None
 
-            if self.end_date and next_date > self.end_date:
-                return None
+        if self.end_date and next_date > self.end_date:
+            return None
 
         return next_date
 

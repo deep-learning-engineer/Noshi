@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, NotFound
 from django.db import IntegrityError
 
+from backend.utils import get_user_active_accounts_count
 from core.config import AppConfig
 from users.models import User
 from users.serializers import UserSerializer
@@ -36,10 +37,7 @@ class BankAccountCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
 
-        active_accounts_count = user.bank_accounts.filter(
-            bank_account__status__in=['active', 'frozen']
-        ).count()
-
+        active_accounts_count, _ = get_user_active_accounts_count(user)
         if active_accounts_count >= AppConfig.MAX_ACCOUNTS_PER_USER:
             raise ValidationError(
                 {"error": f"You cannot have more than {AppConfig.MAX_ACCOUNTS_PER_USER} active or frozen bank accounts"}, # noqa
@@ -63,7 +61,8 @@ class UserBankAccountsListView(generics.ListAPIView):
 
     def get_queryset(self):
         return BankAccount.objects.filter(
-            users__user=self.request.user
+            users__user=self.request.user,
+            saving_account__isnull=True
         )
 
 
@@ -164,16 +163,19 @@ class ChangeAccountUsersView(APIView):
         account = serializer.validated_data['account']
         user = serializer.validated_data['user']
 
+        if hasattr(account, 'saving_account'):
+            raise ValidationError(
+                {"error": "Cannot add users to a savings account"},
+                code=status.HTTP_400_BAD_REQUEST
+            )
+
         if UserBankAccount.objects.filter(user=user, bank_account=account).exists():
             raise ValidationError(
                 {"error": "This user is already a member of this account."},
                 code=status.HTTP_400_BAD_REQUEST
             )
 
-        active_accounts_count = user.bank_accounts.filter(
-            bank_account__status__in=['active', 'frozen']
-        ).count()
-
+        active_accounts_count, _ = get_user_active_accounts_count(user)
         if active_accounts_count >= AppConfig.MAX_ACCOUNTS_PER_USER:
             raise ValidationError(
                 {"error": f"User cannot have more than {AppConfig.MAX_ACCOUNTS_PER_USER} active or frozen bank accounts"},  # noqa

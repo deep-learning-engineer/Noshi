@@ -91,6 +91,29 @@ class Transaction(models.Model):
             raise ValueError(f"Currency conversion between different currencies is currently unavailable: {e}")
 
     @classmethod
+    def _update_savings_account_min_balance(cls, bank_account):
+        """Updates the min_balance for a savings account based on the current balance"""
+        if not hasattr(bank_account, 'saving_account'):
+            return
+
+        saving_account = bank_account.saving_account
+        current_balance = bank_account.balance
+
+        if saving_account.is_first_deposit:
+            saving_account.min_balance = min(
+                current_balance,
+                AppConfig.MAXIMUM_ACCRUAL_BALANCE
+            )
+            saving_account.is_first_deposit = False
+        else:
+            saving_account.min_balance = min(
+                saving_account.min_balance,
+                current_balance
+            )
+
+        saving_account.save()
+
+    @classmethod
     def create_transaction(cls, sender_account, receiver_account, amount, description=""):
         with db_transaction.atomic():
             cls.validate_accounts(sender_account, receiver_account, amount)
@@ -125,6 +148,12 @@ class Transaction(models.Model):
                 [sender_account, receiver_account],
                 ['balance']
             )
+
+            sender_account.refresh_from_db()
+            receiver_account.refresh_from_db()
+
+            cls._update_savings_account_min_balance(sender_account)
+            cls._update_savings_account_min_balance(receiver_account)
 
         return transaction
 

@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db import transaction as db_transaction
 
+from backend.utils import get_user_active_accounts_count
 from .models import (
     BankAccount,
     BankAccountInvitation,
@@ -96,9 +97,7 @@ class BankAccountInvitationSerializer(serializers.Serializer):
         user = self.context['request'].user
         account_number = data.get('account_number')
 
-        active_accounts_count = user.bank_accounts.filter(
-            bank_account__status__in=['active', 'frozen']
-        ).count()
+        active_accounts_count, _ = get_user_active_accounts_count(user)
         if active_accounts_count >= AppConfig.MAX_ACCOUNTS_PER_USER:
             raise ValidationError(
                 {"error": f"You cannot have more than {AppConfig.MAX_ACCOUNTS_PER_USER} active or frozen bank accounts"}, # noqa
