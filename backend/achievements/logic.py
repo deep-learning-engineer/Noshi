@@ -96,9 +96,12 @@ def award_generosity(user: User) -> None:
         _award(user, ach)
 
 
-def award_self_transfer(user: User, sender_account: BankAccount, receiver_account: BankAccount) -> None:
-    if sender_account == receiver_account:
-        ach = _get_or_create("Проверка связи", "Совершить перевод самому себе")
+def award_first_account(user: User) -> None:
+    if BankAccount.objects.filter(owner=user).count() == 1:
+        ach = _get_or_create(
+            "Первый счёт",
+            "Открыть свой первый банковский счёт"
+        )
         _award(user, ach)
 
 

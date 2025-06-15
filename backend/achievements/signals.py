@@ -10,18 +10,25 @@ from .logic import (
     award_family_bank,
     award_reverse_transfer,
     award_generosity,
-    award_self_transfer,
+    award_first_account,
     award_chain_reaction,
     award_payment_explorer,
 )
 from bank_accounts.models import UserBankAccount
+
+from bank_accounts.models import BankAccount
+
+
+@receiver(post_save, sender=BankAccount)
+def on_account_created(sender, instance, created, **kwargs):
+    if created:
+        award_first_account(instance.owner)
 
 
 @receiver(post_save, sender=UserBankAccount)
 def on_co_owner_added(sender, instance, created, **kwargs):
     if created:
         owner = instance.bank_account.owner
-        print(owner)
         award_family_bank(owner)
 
 
@@ -30,30 +37,15 @@ def on_transaction_save(sender, instance, created, **kwargs):
     if not created:
         return
 
-    sender_account = instance.sender_account
-    sender_users = sender_account.users.select_related('user').all()
+    user = instance.sender_account.owner
+    account_ids = user.bank_accounts.values_list('bank_account_id', flat=True)
+    txn_count = Transaction.objects.filter(sender_account_id__in=account_ids).count()
 
-    if not sender_users:
-        return
-
-    sender_currency = sender_account.currency
-    receiver_currency = instance.receiver_account.currency
-    transaction_date = instance.created_at.date()
-
-    for user_bank_account in sender_users:
-        user = user_bank_account.user
-        account_ids = user.bank_accounts.values_list('bank_account_id',
-                                                     flat=True)
-        transaction_count = Transaction.objects.filter(
-            sender_account_id__in=account_ids
-        ).count()
-
-        award_big_wallet(user, transaction_date, account_ids)
-        award_first_transaction(user, transaction_count)
-        award_loyal_client(user, transaction_count)
-        award_currency_broker(user, sender_currency, receiver_currency)
-        award_reverse_transfer(user, instance.receiver_account.owner)
-        award_generosity(user)
-        award_self_transfer(user, instance.sender_account, instance.receiver_account)
-        award_chain_reaction(user, instance.sender_account)
-        award_payment_explorer(user)
+    award_big_wallet(user, instance.created_at.date(), account_ids)
+    award_first_transaction(user, txn_count)
+    award_loyal_client(user, txn_count)
+    award_currency_broker(user, instance.sender_account.currency, instance.receiver_account.currency)
+    award_reverse_transfer(user, instance.receiver_account.owner)
+    award_generosity(user)
+    award_chain_reaction(user, instance.sender_account)
+    award_payment_explorer(user)

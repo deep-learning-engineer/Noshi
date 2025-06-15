@@ -27,7 +27,7 @@ class BankAccountAdmin(admin.ModelAdmin):
 
     actions = ["freeze_accounts", "unfreeze_accounts", "close_accounts"]
 
-    @admin.action(description="Заморозить выбранные счета")
+    @admin.action(description="Froze selected accounts")
     def freeze_accounts(self, request, queryset):
         updated = queryset.update(status="frozen")
         self.message_user(request, f"Frozen accounts: {updated}")
