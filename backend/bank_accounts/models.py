@@ -14,7 +14,7 @@ class BankAccount(models.Model):
     PAYMENT_SYSTEMS = [
         ('VISA', 'Visa'),
         ('MC', 'Mastercard'),
-        ('MIR', 'Мир'),
+        ('MIR', 'Mir'),
         ('UPI', 'UnionPay'),
         ('JCB', 'Japan Credit Bureau')
     ]
@@ -57,7 +57,11 @@ class BankAccount(models.Model):
         ]
 
     def __str__(self):
-        return f"Bank Account: {self.account_number} - {self.balance}"
+        return (
+            f"Bank Account: {self.account_number} " +  # noqa
+            f"Owner: {self.owner.first_name} {self.owner.last_name} " +  # noqa
+            f"Balance: {self.balance}"
+        )
 
     def is_active(self):
         return self.status == 'active'

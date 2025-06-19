@@ -18,11 +18,20 @@ class ScheduledTransfersAdmin(admin.ModelAdmin):
     list_filter = ("frequency", "sender_account__currency")
     search_fields = (
         "sender_account__account_number",
+        "sender_account__owner__first_name",
+        "sender_account__owner__last_name",
+        "sender_account__owner__phone",
         "receiver_account__account_number",
+        "receiver_account__owner__first_name",
+        "receiver_account__owner__last_name",
+        "receiver_account__owner__phone",
         "description",
     )
     autocomplete_fields = ("sender_account", "receiver_account")
     actions = ["run_today"]
+
+    def has_add_permission(self, request):
+        return False
 
     @admin.action(description="Complete selected translations today")
     def run_today(self, request, queryset):

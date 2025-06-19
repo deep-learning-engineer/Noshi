@@ -12,12 +12,12 @@ from bank_accounts.models import BankAccount
 
 class ScheduledTransfers(models.Model):
     FREQUENCY_CHOICES = [
-        ('once', 'Однократно'),
-        ('daily', 'Ежедневно'),
-        ('weekly', 'Еженедельно'),
-        ('bi-weekly', 'Раз в две недели'),
-        ('monthly', 'Ежемесячно'),
-        ('annually', 'Ежегодно'),
+        ('once', 'Once'),
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('bi-weekly', 'Bi-weekly'),
+        ('monthly', 'Monthly'),
+        ('annually', 'Annually'),
     ]
 
     sender_account = models.ForeignKey(

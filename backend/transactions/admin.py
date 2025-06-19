@@ -49,7 +49,8 @@ class TransactionAdmin(admin.ModelAdmin):
         "description",
         "amount",
         "sender_account",
-        "receiver_account"
+        "receiver_account",
+        "created_at"
     )
     list_display = (
         "transaction_id",
@@ -62,6 +63,20 @@ class TransactionAdmin(admin.ModelAdmin):
         "status",
         "created_at",
     )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        self.message_user(
+            request,
+            "Transactions cannot be created or modified through the admin panel",
+            level="error"
+        )
+        return
 
     def sender_currency(self, obj):
         return obj.sender_account.currency
@@ -88,29 +103,17 @@ class TransactionAdmin(admin.ModelAdmin):
         "transaction_id",
         "sender_account__account_number",
         "receiver_account__account_number",
+        "sender_account__owner__first_name",
+        "sender_account__owner__last_name",
+        "sender_account__owner__phone",
+        "receiver_account__owner__first_name",
+        "receiver_account__owner__last_name",
+        "receiver_account__owner__phone",
         "description",
     )
     ordering = ("transaction_id",)
     autocomplete_fields = ("sender_account", "receiver_account", "type_id")
-    readonly_fields = ("created_at",)
-
-    def save_model(self, request, obj, form, change):
-        if not change:
-            Transaction.create_transaction(
-                sender_account=obj.sender_account,
-                receiver_account=obj.receiver_account,
-                amount=obj.amount,
-                description=obj.description or ""
-            )
-        else:
-            self.message_user(request,
-                              "You cannot modify existing transactions from the admin panel.",
-                              level="warning")
-
-    @admin.action(description="Mark as failed")
-    def mark_failed(self, request, queryset):
-        updated = queryset.update(status="failed")
-        self.message_user(request, f"Updated {updated} transactions.")
+    readonly_fields = [field.name for field in Transaction._meta.fields] + ['created_at']
 
 
 @admin.register(TransactionType)

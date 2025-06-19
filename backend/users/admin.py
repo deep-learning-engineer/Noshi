@@ -3,6 +3,10 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User
 from bank_accounts.models import UserBankAccount
 from achievements.models import UserAchievement
+from django.contrib.auth.models import Group
+
+
+admin.site.unregister(Group)
 
 
 class UserBankAccountInline(admin.TabularInline):
@@ -39,16 +43,26 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ("is_staff", "is_superuser", "is_active", "groups")
     search_fields = ("email", "first_name", "last_name", "phone")
     ordering = ("email",)
+    readonly_fields = ("last_login", "date_joined")
     inlines = (UserBankAccountInline, UserAchievementInline)
 
     actions = ["disable_users", "enable_users"]
 
-    @admin.action(description="Block users")
+    @admin.action(description="Block accounts")
     def disable_users(self, request, queryset):
         updated = queryset.update(is_active=False)
-        self.message_user(request, f"Blocked: {updated} users")
+        self.message_user(request, f"Blocked: {updated} accounts")
 
     @admin.action(description="Unblock accounts")
     def enable_users(self, request, queryset):
         updated = queryset.update(is_active=True)
-        self.message_user(request, f"Unblocked: {updated} users")
+        self.message_user(request, f"Unblocked: {updated} accounts")
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions

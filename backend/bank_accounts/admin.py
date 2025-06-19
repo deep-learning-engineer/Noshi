@@ -23,6 +23,7 @@ class BankAccountAdmin(admin.ModelAdmin):
     list_filter = ("currency", "payment_system", "status")
     search_fields = ("account_number", "owner__email", "owner__first_name", "owner__last_name")
     autocomplete_fields = ("owner",)
+    readonly_fields = ("currency", "payment_system", "balance", "account_number", "owner")
     inlines = (UserBankAccountInline,)
 
     actions = ["freeze_accounts", "unfreeze_accounts", "close_accounts"]
@@ -54,6 +55,12 @@ class BankAccountAdmin(admin.ModelAdmin):
                 f"Failed to close {errors} accounts (balance is not 0)",
                 level="warning"
             )
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_add_permission(self, request):
+        return False
 
 
 @admin.register(UserBankAccount)
