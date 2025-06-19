@@ -62,6 +62,7 @@ class UserBankAccountsListView(generics.ListAPIView):
     def get_queryset(self):
         return BankAccount.objects.filter(
             users__user=self.request.user,
+            status__in=['active', 'frozen'],
             saving_account__isnull=True
         )
 

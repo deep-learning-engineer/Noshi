@@ -133,7 +133,8 @@ class UserSavingsAccountsListView(generics.ListAPIView):
 
     def get_queryset(self):
         return SavingsAccount.objects.filter(
-            bank_account__owner=self.request.user
+            bank_account__owner=self.request.user,
+            bank_account__status__in=['active', 'frozen']
         ).select_related('bank_account').prefetch_related(
             Prefetch('bank_account__users', queryset=UserBankAccount.objects.select_related('user'))
         )
