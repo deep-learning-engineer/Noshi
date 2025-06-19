@@ -1,9 +1,12 @@
+from django.db.models import Q
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
 
 from .models import ScheduledTransfers
 from .serializers import ScheduledTransferSerializer, ScheduledTransferListSerializer
+from bank_accounts.models import BankAccount
 
 
 class ScheduledTransferCreateView(generics.CreateAPIView):
@@ -62,3 +65,29 @@ class ScheduledTransferDetailView(generics.RetrieveDestroyAPIView):
             {"detail": "Scheduled translation successfully removed."},
             status=status.HTTP_200_OK
         )
+
+
+class AccountNumberScheduledTransfersView(generics.GenericAPIView):
+    """
+    API view to get all scheduled transfers related to a specific account
+    (both incoming and outgoing) by account number.
+    Authenticated user must be a member of the account.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = ScheduledTransferListSerializer
+
+    def get(self, request, account_number):
+        try:
+            requested_account = BankAccount.objects.get(
+                users__user=request.user,
+                account_number=account_number
+            )
+        except BankAccount.DoesNotExist:
+            raise NotFound({"detail": "Bank account not found."})
+
+        scheduled_transfers = ScheduledTransfers.objects.filter(
+            Q(sender_account=requested_account)
+        )
+
+        serializer = self.get_serializer(scheduled_transfers, many=True)
+        return Response(serializer.data)
