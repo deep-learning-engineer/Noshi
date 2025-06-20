@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Transaction, TransactionType
 from django.contrib.admin import SimpleListFilter
+from admin_logs.mixins import LoggingMixin
 
 
 class SenderCurrencyFilter(SimpleListFilter):
@@ -40,7 +41,7 @@ class ReceiverCurrencyFilter(SimpleListFilter):
 
 
 @admin.register(Transaction)
-class TransactionAdmin(admin.ModelAdmin):
+class TransactionAdmin(LoggingMixin, admin.ModelAdmin):
     actions = ["mark_failed"]
     date_hierarchy = "created_at"
     fields = (
@@ -71,12 +72,13 @@ class TransactionAdmin(admin.ModelAdmin):
         return False
 
     def save_model(self, request, obj, form, change):
-        self.message_user(
-            request,
-            "Transactions cannot be created or modified through the admin panel",
-            level="error"
-        )
-        return
+        super().save_model(request, obj, form, change)
+        action = 'update' if change else 'create'
+        self.log_action(request, obj, action)
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+        self.log_action(request, obj, 'delete')
 
     def sender_currency(self, obj):
         return obj.sender_account.currency
@@ -117,6 +119,15 @@ class TransactionAdmin(admin.ModelAdmin):
 
 
 @admin.register(TransactionType)
-class TransactionTypeAdmin(admin.ModelAdmin):
+class TransactionTypeAdmin(LoggingMixin, admin.ModelAdmin):
     list_display = ("name", "type_id")
     search_fields = ("name",)
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        action = 'update' if change else 'create'
+        self.log_action(request, obj, action)
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+        self.log_action(request, obj, 'delete')

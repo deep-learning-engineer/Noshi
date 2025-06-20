@@ -4,6 +4,7 @@ from .models import User
 from bank_accounts.models import UserBankAccount
 from achievements.models import UserAchievement
 from django.contrib.auth.models import Group
+from admin_logs.mixins import LoggingMixin
 
 
 admin.site.unregister(Group)
@@ -26,7 +27,7 @@ class UserAchievementInline(admin.TabularInline):
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(LoggingMixin, BaseUserAdmin):
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("Personal data", {"fields": ("first_name", "last_name", "phone")}),
@@ -52,11 +53,15 @@ class UserAdmin(BaseUserAdmin):
     def disable_users(self, request, queryset):
         updated = queryset.update(is_active=False)
         self.message_user(request, f"Blocked: {updated} accounts")
+        for user in queryset:
+            self.log_action(request, user, action="block", details={"user_id": user.pk})
 
     @admin.action(description="Unblock accounts")
     def enable_users(self, request, queryset):
         updated = queryset.update(is_active=True)
         self.message_user(request, f"Unblocked: {updated} accounts")
+        for user in queryset:
+            self.log_action(request, user, action="unblock", details={"user_id": user.pk})
 
     def has_delete_permission(self, request, obj=None):
         return False

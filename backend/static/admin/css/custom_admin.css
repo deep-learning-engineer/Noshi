@@ -1,0 +1,151 @@
+/* --- Noshi Dark Green Admin Theme --- */
+
+:root {
+    --primary: #0C4B33; /* Dark Green */
+    --secondary: #107C41; /* Brighter Green for actions */
+    --accent: #66bb6a; /* A pleasant Green for links, replacing teal */
+    --header-bg: #1D1D1D;
+    --header-link-color: #E0E0E0;
+    --module-bg: #272727; /* Main background for modules/content */
+    --text-color: #E0E0E0;
+    --table-header-bg: #0C4B33;
+    --table-row-bg: #222222;
+    --table-row-alt-bg: #272727;
+}
+
+body, #container {
+    background: #1D1D1D;
+    color: var(--text-color);
+}
+
+/* --- Header --- */
+#header {
+    background: var(--header-bg);
+    color: var(--header-link-color);
+}
+#header a:link, #header a:visited {
+    color: var(--header-link-color);
+}
+
+/* --- Breadcrumbs --- */
+.breadcrumbs {
+    background: #252525;
+}
+
+/* --- Main Content --- */
+#content {
+    background: var(--module-bg);
+}
+.module caption, .module h2, .inline-group h2 {
+    background: #252525;
+}
+
+/* --- Left Sidebar --- */
+#nav-sidebar {
+    background: #1D1D1D;
+}
+#nav-sidebar .module caption {
+    background: var(--secondary) !important; /* Using the brighter green */
+    color: white !important;
+}
+#nav-sidebar .module table {
+    background: var(--module-bg);
+}
+#nav-sidebar .module table a {
+    color: var(--text-color);
+}
+#nav-sidebar .module table .addlink {
+    color: var(--accent);
+}
+#nav-filter-form {
+    background: #1d1d1d;
+    border-top: 1px solid #333;
+}
+
+/* --- Tables --- */
+.results thead th {
+    background: var(--table-header-bg);
+    color: white;
+    border-bottom: 1px solid #333;
+}
+.results tbody tr {
+    background: var(--table-row-bg);
+}
+.results tbody tr:nth-child(even) {
+    background: var(--table-row-alt-bg);
+}
+.results tbody td, .results tbody th {
+    background-color: inherit;
+    color: var(--text-color);
+    border-color: #333;
+}
+.results tbody a {
+    color: var(--accent);
+}
+tr.selected, tr.selected td, tr.selected th {
+    background-color: #333 !important;
+}
+
+/* --- Filter Sidebar --- */
+#changelist-filter {
+    background: var(--module-bg);
+}
+#changelist-filter h2 {
+    background: #F5F5F5;
+    color: #333;
+    border-bottom: 1px solid #ddd;
+}
+#changelist-filter a {
+    color: var(--accent);
+}
+#changelist-filter a.selected {
+    color: white;
+    border-left: 3px solid var(--secondary);
+}
+
+/* --- Forms & Buttons --- */
+.button, input[type=submit], input[type=button], .submit-row input {
+    background: var(--secondary);
+    color: white;
+    border: none;
+}
+.button.default, .submit-row .deletelink {
+    background: #555;
+}
+input, textarea, select {
+    background: #333;
+    color: var(--text-color);
+    border: 1px solid #555;
+}
+.actions {
+    background: #252525;
+    border-color: #333;
+}
+.actions select {
+    background: #333;
+    color: var(--text-color);
+}
+
+/* --- FIX for Blue Colors --- */
+
+/* Breadcrumbs links */
+.breadcrumbs a {
+    color: var(--accent) !important;
+}
+
+/* Filter header */
+#changelist-filter h2 {
+    background: var(--secondary) !important;
+    color: white !important;
+    border-bottom: 1px solid var(--primary) !important;
+}
+
+/* Links inside the filter */
+#changelist-filter a {
+    color: var(--accent) !important;
+}
+
+#changelist-filter a.selected, #changelist-filter a:focus, #changelist-filter a:hover {
+    color: white !important;
+    border-left-color: var(--accent) !important;
+} 

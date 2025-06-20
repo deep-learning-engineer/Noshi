@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import BankAccount, UserBankAccount
+from admin_logs.mixins import LoggingMixin
 
 
 class UserBankAccountInline(admin.TabularInline):
@@ -11,7 +12,7 @@ class UserBankAccountInline(admin.TabularInline):
 
 
 @admin.register(BankAccount)
-class BankAccountAdmin(admin.ModelAdmin):
+class BankAccountAdmin(LoggingMixin, admin.ModelAdmin):
     list_display = (
         "account_number",
         "owner",
@@ -32,11 +33,15 @@ class BankAccountAdmin(admin.ModelAdmin):
     def freeze_accounts(self, request, queryset):
         updated = queryset.update(status="frozen")
         self.message_user(request, f"Frozen accounts: {updated}")
+        for acc in queryset:
+            self.log_action(request, acc, action="freeze", details={"account_id": acc.pk})
 
     @admin.action(description="Unfroze selected accounts")
     def unfreeze_accounts(self, request, queryset):
         updated = queryset.filter(status="frozen").update(status="active")
         self.message_user(request, f"Unfrozen accounts: {updated}")
+        for acc in queryset:
+            self.log_action(request, acc, action="unfreeze", details={"account_id": acc.pk})
 
     @admin.action(description="Close selected accounts")
     def close_accounts(self, request, queryset):
@@ -45,6 +50,7 @@ class BankAccountAdmin(admin.ModelAdmin):
             try:
                 acc.close_account()
                 updated += 1
+                self.log_action(request, acc, action="close", details={"account_id": acc.pk})
             except ValueError:
                 errors += 1
         if updated:
@@ -64,7 +70,7 @@ class BankAccountAdmin(admin.ModelAdmin):
 
 
 @admin.register(UserBankAccount)
-class UserBankAccountAdmin(admin.ModelAdmin):
+class UserBankAccountAdmin(LoggingMixin, admin.ModelAdmin):
     list_display = ("user", "bank_account")
     search_fields = ("user__email", "bank_account__account_number")
     autocomplete_fields = ("user", "bank_account")

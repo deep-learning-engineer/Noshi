@@ -41,6 +41,7 @@ SESSION_COOKIE_AGE = 1209600
 # Application definition
 
 INSTALLED_APPS = [
+    'backend.apps.BackendConfig',
     'rest_framework',
     'django_extensions',
     'django.contrib.admin',
@@ -54,8 +55,8 @@ INSTALLED_APPS = [
     'scheduled_transfers',
     'savings_accounts',
     'achievements.apps.AchievementsConfig',
-    'backend.apps.BackendConfig',
     'bank_accounts.apps.BankAccountsConfig',
+    'admin_logs',
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -166,6 +167,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+TEMPLATES[0]['DIRS'] = [BASE_DIR / "templates"]
+   
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 

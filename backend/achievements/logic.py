@@ -17,7 +17,7 @@ def _get_or_create(name: str, description: str) -> Achievement:
     )[0]
 
 
-def _award(user: User, achievement: Achievement) -> None:
+def _award(user: User, achievement: Achievement | None) -> None:
     UserAchievement.objects.get_or_create(user=user, achievement=achievement)
 
 
