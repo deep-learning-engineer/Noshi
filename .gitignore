@@ -1,6 +1,14 @@
 # Python veirtual enviroment
-.venv/
+.venv*
 venv/
+.idea/
+
+# Settings 
+*.env*
+
+# Coockie
+cookies*
+cookie*
 
 # Cache
 .pytest_cache/
@@ -8,3 +16,18 @@ __pycache__/
 
 # DataBase
 db.*
+
+# Test
+test.py
+
+# VSCode 
+.VScode*
+
+# SQL 
+*.sqlite3-query
+
+# Logs
+*.log
+
+# SH
+*.sh

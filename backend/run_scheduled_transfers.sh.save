@@ -1,0 +1,10 @@
+cd "$(dirname "$0")"
+set -a
+source .env.development
+set +a
+
+.venv_wsl/bin/python3 manage.py 
+#
+# Each task to run has to be defined through a single line
+# indicating with different fields when the task will be run
+# and what command to run for the  >> scheduled_transfers.log 2>&1
